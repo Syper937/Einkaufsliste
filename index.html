@@ -100,13 +100,13 @@
   input:focus, select:focus { outline: none; background: rgba(29,60,143,.06); border-radius: 4px; }
   select { font-size: 22px; cursor: pointer; }
   button { cursor: pointer; }
-  /* Grüner Plus-Knopf */
+  /* Grüner Knopf "hinzufügen" – passt genau in eine Linie */
   .dazu {
     background: #2e8b4f; color: #fff;
-    font-family: system-ui, -apple-system, sans-serif;
-    font-size: 30px; font-weight: 700; line-height: 1;
-    width: 48px; height: 32px; margin-top: 2px;
-    border-radius: 8px; padding: 0;
+    font-size: 24px; font-weight: 700; line-height: 1;
+    height: 28px; margin: 3px 0 5px;
+    border-radius: 8px; padding: 0 14px;
+    white-space: nowrap; justify-self: start;
     box-shadow: 0 2px 0 #1f6638;
   }
   .dazu:hover { background: #267a44; }
@@ -220,12 +220,7 @@
     #kategorie { grid-area: kat; font-size: 22px; width: 100%; }
     #name { grid-area: name; }
     #menge { grid-area: menge; }
-    .dazu {
-      grid-area: dazu;
-      width: 46px; height: 46px; margin: 13px 0;   /* nimmt genau zwei Linien ein */
-      border-radius: 12px; font-size: 36px;
-      box-shadow: 0 3px 0 #1f6638;
-    }
+    .dazu { grid-area: dazu; }
     .leiste { gap: 6px; }
     .filter, .streichen { font-size: 20px; padding: 0 5px; }
   }
@@ -250,7 +245,7 @@
         <option>Drogerie</option>
         <option selected>Sonstiges</option>
       </select>
-      <button class="dazu" type="submit" aria-label="Hinzufügen" title="Hinzufügen">+</button>
+      <button class="dazu" type="submit" >hinzufügen</button>
     </form>
 
     <div class="leiste">
