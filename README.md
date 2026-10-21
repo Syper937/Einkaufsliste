@@ -6,6 +6,7 @@ Eine interaktive Einkaufsliste im Look eines linierten Notizblocks – gebaut mi
 
 ## Funktionen
 - Artikel mit Kategorie und Menge eintragen (grüner Knopf „hinzufügen“), abhaken, mit der roten Mülltonne löschen
+- Erledigte Artikel lassen sich mit dem Kreispfeil ↺ wieder auf „offen“ setzen
 - Artikel und Kategorien per Ziehen am Griff ⠿ verschieben (auch mit dem Finger)
 - Doppeltippen auf einen Artikel benennt ihn um
 - Die Liste wird im Browser des Geräts gespeichert – sie bleibt privat und wird nicht ins Internet hochgeladen

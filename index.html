@@ -185,6 +185,7 @@
   }
   li .muell:hover { opacity: 1; }
   li .muell svg { width: 20px; height: 20px; display: block; }
+  li .zurueck { color: var(--tinte); }
 
   /* Verschieben */
   .zieht { opacity: .35; }
@@ -499,7 +500,15 @@
     muell.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>`;
     muell.addEventListener("click", () => { artikel = artikel.filter(x => x !== a); speichern(); zeichnen(); });
 
-    li.append(griff, box, name, menge, muell);
+    // Erledigt? Dann statt Mülltonne ein Kreispfeil zum Rückgängigmachen
+    const zurueck = document.createElement("button");
+    zurueck.className = "muell zurueck";
+    zurueck.title = "Rückgängig – wieder offen";
+    zurueck.setAttribute("aria-label", "Rückgängig");
+    zurueck.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 3v6h6"/></svg>`;
+    zurueck.addEventListener("click", () => { a.done = false; speichern(); zeichnen(); });
+
+    li.append(griff, box, name, menge, a.done ? zurueck : muell);
     return li;
   }
 
