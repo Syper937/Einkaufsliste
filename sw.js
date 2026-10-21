@@ -1,6 +1,6 @@
 // Speichert die App auf dem Handy zwischen, damit sie auch ohne Internet startet.
 // Bei Änderungen an der App die Versionsnummer erhöhen.
-const VERSION = "einkaufsliste-v2";
+const VERSION = "einkaufsliste-v3";
 const DATEIEN = ["./", "index.html", "manifest.webmanifest", "icon-180.png", "icon-512.png"];
 
 self.addEventListener("install", e => {
