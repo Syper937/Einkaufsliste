@@ -100,8 +100,17 @@
   input:focus, select:focus { outline: none; background: rgba(29,60,143,.06); border-radius: 4px; }
   select { font-size: 22px; cursor: pointer; }
   button { cursor: pointer; }
-  .dazu { font-weight: 700; white-space: nowrap; }
-  .dazu:hover { color: var(--rot); }
+  /* Grüner Plus-Knopf */
+  .dazu {
+    background: #2e8b4f; color: #fff;
+    font-family: system-ui, -apple-system, sans-serif;
+    font-size: 30px; font-weight: 700; line-height: 1;
+    width: 48px; height: 32px; margin-top: 2px;
+    border-radius: 8px; padding: 0;
+    box-shadow: 0 2px 0 #1f6638;
+  }
+  .dazu:hover { background: #267a44; }
+  .dazu:active { transform: translateY(2px); box-shadow: none; }
 
   /* ---------- Filter ---------- */
   .leiste {
@@ -167,9 +176,15 @@
     text-decoration: line-through; text-decoration-thickness: 2px;
     color: var(--tinte-hell);
   }
-  li .weg { font-size: 26px; color: var(--tinte-hell); padding: 0 2px; height: auto; line-height: 1; }
-  li .weg:hover { color: var(--rot); }
-  li .menge { min-width: 44px; color: var(--tinte); }
+  li .menge { color: var(--tinte); white-space: nowrap; }
+  li .mal { color: var(--tinte-hell); margin-right: 4px; }
+  /* Rote Mülltonne = löschen */
+  li .muell {
+    color: var(--rot); padding: 0 4px; height: var(--zeile);
+    display: flex; align-items: center; flex: none; opacity: .85;
+  }
+  li .muell:hover { opacity: 1; }
+  li .muell svg { width: 20px; height: 20px; display: block; }
 
   /* Verschieben */
   .zieht { opacity: .35; }
@@ -187,7 +202,8 @@
     li .griff, .gruppe h2 .griff { width: 30px; font-size: 20px; }
     li, .gruppe h2 { margin-left: -40px; }
     li input[type=checkbox] { width: 24px; height: 24px; }
-    li .weg { padding: 0 10px; }
+    li .muell { padding: 0 8px; }
+    li .muell svg { width: 22px; height: 22px; }
   }
 
   /* Handy (z. B. iPhone 14) */
@@ -195,15 +211,21 @@
     body { font-size: 24px; padding-left: 8px; padding-right: 8px; }
     h1 { font-size: 42px; }
     .seite { padding-left: 66px; padding-right: 14px; }
+    /* Eingaben untereinander: Kategorie, Artikel, Menge, Plus */
     form {
-      grid-template-columns: 64px minmax(0, 1fr) auto;
-      grid-template-areas: "name name name" "menge kat dazu";
-      gap: 0 8px;
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-areas: "kat" "name" "menge" "dazu";
+      gap: 0;
     }
+    #kategorie { grid-area: kat; font-size: 22px; width: 100%; }
     #name { grid-area: name; }
     #menge { grid-area: menge; }
-    #kategorie { grid-area: kat; font-size: 20px; }
-    .dazu { grid-area: dazu; }
+    .dazu {
+      grid-area: dazu;
+      width: 64px; height: 64px; margin: 4px 0;   /* nimmt genau zwei Linien ein */
+      border-radius: 16px; font-size: 48px;
+      box-shadow: 0 3px 0 #1f6638;
+    }
     .leiste { gap: 6px; }
     .filter, .streichen { font-size: 20px; padding: 0 5px; }
   }
@@ -217,7 +239,7 @@
     <p class="summe" id="summe"></p>
 
     <form id="eingabe">
-      <input id="name" placeholder="Was brauchst du?" autocomplete="off" required>
+      <input id="name" placeholder="Artikel" autocomplete="off" required>
       <input id="menge" placeholder="Menge" autocomplete="off">
       <select id="kategorie">
         <option>Obst &amp; Gemüse</option>
@@ -228,7 +250,7 @@
         <option>Drogerie</option>
         <option selected>Sonstiges</option>
       </select>
-      <button class="dazu" type="submit">+ dazu</button>
+      <button class="dazu" type="submit" aria-label="Hinzufügen" title="Hinzufügen">+</button>
     </form>
 
     <div class="leiste">
@@ -468,17 +490,21 @@
       if (neu && neu.trim()) { a.name = neu.trim(); speichern(); zeichnen(); }
     });
 
-    const weg = document.createElement("button");
-    weg.className = "weg";
-    weg.textContent = "×";
-    weg.title = "Löschen";
-    weg.addEventListener("click", () => { artikel = artikel.filter(x => x !== a); speichern(); zeichnen(); });
-
+    // Menge als "× 2" – das × ist nur ein Malzeichen
     const menge = document.createElement("span");
     menge.className = "menge";
-    menge.textContent = a.qty;
+    if (a.qty) menge.innerHTML = `<span class="mal">×</span>`;
+    menge.append(a.qty);
 
-    li.append(griff, box, name, weg, menge);
+    // Rote Mülltonne zum Löschen
+    const muell = document.createElement("button");
+    muell.className = "muell";
+    muell.title = "Löschen";
+    muell.setAttribute("aria-label", "Löschen");
+    muell.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>`;
+    muell.addEventListener("click", () => { artikel = artikel.filter(x => x !== a); speichern(); zeichnen(); });
+
+    li.append(griff, box, name, menge, muell);
     return li;
   }
 

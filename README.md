@@ -5,7 +5,7 @@ Eine interaktive Einkaufsliste im Look eines linierten Notizblocks – gebaut mi
 **Live:** https://syper937.github.io/Einkaufsliste/
 
 ## Funktionen
-- Artikel mit Menge und Kategorie eintragen, abhaken, löschen
+- Artikel mit Kategorie und Menge eintragen (grünes +), abhaken, mit der roten Mülltonne löschen
 - Artikel und Kategorien per Ziehen am Griff ⠿ verschieben (auch mit dem Finger)
 - Doppeltippen auf einen Artikel benennt ihn um
 - Die Liste wird im Browser des Geräts gespeichert – sie bleibt privat und wird nicht ins Internet hochgeladen
