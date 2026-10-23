@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rezeptbuch</title>
+<!-- Gehört zur Einkaufsliste-App: gleiche Adresse, gleicher Speicher -->
+<meta name="theme-color" content="#d9d2c3">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Einkauf">
+<link rel="apple-touch-icon" href="../icon-180.png">
+<link rel="manifest" href="../manifest.webmanifest">
+<style>
+  /* Handschrift "Caveat" (SIL Open Font License) – dieselbe Datei wie die Einkaufsliste */
+  @font-face {
+    font-family: "Kuli";
+    src: url("../schrift.woff") format("woff");
+    font-weight: 400 700;
+  }
+
+  :root {
+    --zeile: 36px;
+    --tinte: #1d3c8f;
+    --tinte-hell: #6b7fb8;
+    --rot: #c2402f;
+    --gruen: #2e8b4f;
+    --papier: #fdfbf3;
+    --linie: #b8d0e8;
+    --rand: #e8a3a3;
+    --tisch: #d9d2c3;
+    --grau: #a9a49a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--tisch);
+    padding: max(32px, env(safe-area-inset-top)) 16px max(32px, env(safe-area-inset-bottom));
+    -webkit-text-size-adjust: 100%;
+    touch-action: manipulation;
+    font-family: "Kuli", "Segoe Print", "Ink Free", cursive;
+    color: var(--tinte);
+    font-size: 26px;
+    line-height: var(--zeile);
+  }
+  [hidden] { display: none !important; }
+
+  /* ---------- Der Notizblock (wie bei der Einkaufsliste) ---------- */
+  .block {
+    max-width: 600px;
+    margin: 0 auto;
+    background: var(--papier);
+    border-radius: 4px 4px 2px 2px;
+    box-shadow: 0 1px 2px rgba(0,0,0,.15), 0 12px 30px rgba(0,0,0,.18);
+  }
+  .spirale {
+    height: 44px;
+    border-bottom: 1px dashed #d6cfbf;
+    background: radial-gradient(circle at 50% 60%, var(--tisch) 0 7px, transparent 8px) 0 0 / 34px 44px repeat-x;
+  }
+  .seite {
+    padding: var(--zeile) 24px calc(var(--zeile) * 2) 72px;
+    min-height: calc(var(--zeile) * 16);
+    background:
+      linear-gradient(to right, transparent 56px, var(--rand) 56px, var(--rand) 58px, transparent 58px),
+      repeating-linear-gradient(to bottom, transparent 0, transparent calc(var(--zeile) - 1px), var(--linie) calc(var(--zeile) - 1px), var(--linie) var(--zeile));
+    background-position: 0 0, 0 -3px;
+  }
+
+  h1 {
+    margin: 0;
+    font-size: 48px;
+    line-height: calc(var(--zeile) * 2);
+    font-weight: 700;
+    transform: rotate(-1deg);
+    transform-origin: left;
+    overflow-wrap: anywhere;
+  }
+  h2 {
+    margin: var(--zeile) 0 0;
+    height: var(--zeile);
+    font-size: 26px; font-weight: 700;
+    color: var(--rot);
+    text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px;
+  }
+  .klein { color: var(--tinte-hell); font-size: 22px; margin: 0; min-height: var(--zeile); }
+
+  a { color: inherit; }
+  input, select, button, textarea {
+    font: inherit; color: var(--tinte);
+    background: transparent; border: none;
+    padding: 0 2px;
+  }
+  input, select, button { height: var(--zeile); }
+  input::placeholder, textarea::placeholder { color: var(--grau); }
+  input:focus, select:focus, textarea:focus { outline: none; background: rgba(29,60,143,.06); border-radius: 4px; }
+  select { font-size: 22px; cursor: pointer; }
+  button { cursor: pointer; }
+
+  /* Kopfzeile: Links oben */
+  .kopf { position: relative; z-index: 1; display: flex; justify-content: space-between; height: var(--zeile); font-size: 22px; font-weight: 700; }
+  .kopf a, .kopf button { color: var(--rot); text-decoration: none; font-size: 22px; font-weight: 700; padding: 0; }
+
+  /* Grüner Knopf – passt in eine Linie */
+  .gruen {
+    background: var(--gruen); color: #fff;
+    font-size: 24px; font-weight: 700; line-height: 1;
+    height: 28px; margin: 3px 0 5px;
+    border-radius: 8px; padding: 0 14px;
+    white-space: nowrap;
+    box-shadow: 0 2px 0 #1f6638;
+  }
+  .gruen:hover { background: #267a44; }
+  .gruen:active { transform: translateY(2px); box-shadow: none; }
+  .leise { color: var(--tinte-hell); font-size: 22px; padding: 0 6px; }
+  .rotstift { color: var(--rot); font-size: 22px; padding: 0 6px; }
+  .knoepfe { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-top: var(--zeile); }
+
+  /* ---------- Übersicht ---------- */
+  ul { list-style: none; margin: 0; padding: 0; }
+  .rezeptliste { margin-top: var(--zeile); }
+  .rezeptliste li { height: var(--zeile); }
+  .rezeptliste a {
+    display: flex; gap: 10px; align-items: baseline;
+    text-decoration: none; height: var(--zeile);
+  }
+  .rezeptliste .titel { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .rezeptliste .titel::before { content: "• "; color: var(--rot); }
+  .rezeptliste .info { color: var(--tinte-hell); font-size: 20px; white-space: nowrap; }
+  .leer { color: var(--grau); margin-top: var(--zeile); }
+
+  /* ---------- Ein Rezept ---------- */
+  .portionen { display: flex; align-items: center; gap: 8px; font-size: 22px; height: var(--zeile); }
+  .portionen button {
+    width: 30px; height: 26px; line-height: 1;
+    border: 2px solid var(--tinte); border-radius: 50% 45% 55% 48% / 60% 50% 55% 45%;
+    font-size: 22px; font-weight: 700; padding: 0;
+  }
+  .portionen b { min-width: 24px; text-align: center; font-size: 26px; }
+
+  .zutaten li { height: var(--zeile); display: flex; align-items: center; gap: 10px; }
+  .zutaten label { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; cursor: pointer; }
+  .zutaten .name { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .zutaten .menge { white-space: nowrap; }
+  .zutaten li.weg .name, .zutaten li.weg .menge { color: var(--grau); text-decoration: line-through; }
+  .zutaten .steht { font-size: 18px; color: var(--gruen); white-space: nowrap; }
+
+  /* Selbstgemalte Checkbox (wie in der Einkaufsliste) */
+  input[type=checkbox] {
+    appearance: none; -webkit-appearance: none;
+    width: 20px; height: 20px; margin: 0; padding: 0;
+    border: 2px solid var(--tinte);
+    border-radius: 3px 5px 2px 4px;
+    transform: rotate(-3deg);
+    cursor: pointer; position: relative; flex: none;
+  }
+  input[type=checkbox]:checked::after {
+    content: ""; position: absolute; left: 4px; top: -8px;
+    width: 9px; height: 20px;
+    border: solid var(--tinte); border-width: 0 3px 3px 0;
+    transform: rotate(40deg);
+  }
+  .hinweis { font-size: 20px; color: var(--tinte-hell); margin: 0; min-height: var(--zeile); }
+  .meldung { font-size: 22px; color: var(--gruen); font-weight: 700; margin: 0; min-height: var(--zeile); }
+  .meldung a { color: var(--rot); }
+  .schritte { white-space: pre-wrap; margin: 0; overflow-wrap: anywhere; }
+
+  /* ---------- Bearbeiten ---------- */
+  .feld { display: flex; gap: 10px; align-items: center; }
+  .feld span { color: var(--tinte-hell); font-size: 22px; white-space: nowrap; }
+  #f-titel { width: 100%; font-size: 34px; font-weight: 700; height: calc(var(--zeile) * 2); }
+  #f-portionen { width: 70px; }
+  .zeilen li {
+    display: grid; grid-template-columns: minmax(0,1fr) 90px 140px 30px;
+    gap: 8px; height: var(--zeile);
+  }
+  .zeilen li > * { min-width: 0; }
+  .zeilen .raus { color: var(--rot); padding: 0; display: flex; align-items: center; justify-content: center; }
+  .zeilen .raus svg { width: 20px; height: 20px; }
+  textarea {
+    display: block; width: 100%; resize: vertical;
+    line-height: var(--zeile);
+    min-height: calc(var(--zeile) * 6);
+    padding: 0 2px;
+  }
+
+  /* Handy */
+  @media (max-width: 560px) {
+    body { font-size: 24px; padding-left: 8px; padding-right: 8px; }
+    h1 { font-size: 40px; }
+    .seite { padding-left: 66px; padding-right: 14px; }
+    /* Zutat: Name in einer Zeile, darunter Menge + Kategorie + Mülltonne */
+    .zeilen li {
+      grid-template-columns: 80px minmax(0,1fr) 30px;
+      grid-template-areas: "name name name" "menge kat raus";
+      height: calc(var(--zeile) * 2);
+      gap: 0 8px;
+    }
+    .zeilen .z-name { grid-area: name; }
+    .zeilen .z-menge { grid-area: menge; }
+    .zeilen .z-kat { grid-area: kat; }
+    .zeilen .raus { grid-area: raus; }
+    .zeilen .z-kat { font-size: 20px; }
+  }
+</style>
+</head>
+<body>
+<div class="block">
+  <div class="spirale"></div>
+  <div class="seite" id="seite">
+
+    <!-- Ansicht 1: Alle Rezepte -->
+    <section id="uebersicht" hidden>
+      <div class="kopf"><a href="../">← Einkaufsliste</a></div>
+      <h1>Rezepte</h1>
+      <p class="klein" id="anzahl"></p>
+      <div class="knoepfe" style="margin-top:0"><a class="gruen" href="#neu" style="display:inline-flex;align-items:center;text-decoration:none">neues Rezept</a></div>
+      <ul class="rezeptliste" id="rezeptliste"></ul>
+    </section>
+
+    <!-- Ansicht 2: Ein Rezept -->
+    <section id="ansicht" hidden>
+      <div class="kopf"><a href="#">← alle Rezepte</a><a href="../">Einkaufsliste →</a></div>
+      <h1 id="a-titel"></h1>
+      <div class="portionen">
+        für
+        <button type="button" id="weniger" aria-label="Weniger Portionen">−</button>
+        <b id="a-portionen"></b>
+        <button type="button" id="mehr" aria-label="Mehr Portionen">+</button>
+        <span id="a-personen"></span>
+      </div>
+
+      <h2>Zutaten</h2>
+      <ul class="zutaten" id="a-zutaten"></ul>
+      <p class="hinweis" id="a-hinweis">Haken weg bei allem, was du schon zu Hause hast.</p>
+      <div><button class="gruen" id="auf-liste">auf die Einkaufsliste</button></div>
+      <p class="meldung" id="meldung"></p>
+
+      <h2>Zubereitung</h2>
+      <p class="schritte" id="a-schritte"></p>
+
+      <div class="knoepfe">
+        <button class="leise" id="bearbeiten">bearbeiten</button>
+        <button class="rotstift" id="loeschen">Rezept löschen</button>
+      </div>
+    </section>
+
+    <!-- Ansicht 3: Rezept schreiben / ändern -->
+    <section id="formular" hidden>
+      <form id="f">
+        <div class="kopf"><a href="#" id="abbrechen">← abbrechen</a></div>
+        <input id="f-titel" placeholder="Name des Rezepts" autocomplete="off" required>
+        <label class="feld"><span>für</span><input id="f-portionen" type="number" min="1" max="99" value="2" inputmode="numeric"><span>Personen</span></label>
+
+        <h2>Zutaten</h2>
+        <ul class="zeilen" id="f-zutaten"></ul>
+        <button type="button" class="leise" id="f-mehr" style="padding:0">+ noch eine Zutat</button>
+
+        <h2>Zubereitung</h2>
+        <textarea id="f-schritte" placeholder="1. Erst …&#10;2. Dann …"></textarea>
+
+        <div class="knoepfe"><button class="gruen" type="submit">speichern</button></div>
+      </form>
+    </section>
+
+  </div>
+</div>
+
+<script>
+  // ---------- Daten ----------
+  // Rezepte und Einkaufsliste liegen im selben Gerätespeicher (gleiche Internetadresse).
+  const REZEPTE = "rezeptbuch";
+  const LISTE = "einkaufsliste";
+  const KATEGORIEN = ["Obst & Gemüse", "Kühlregal", "Brot & Backwaren", "Vorrat", "Getränke", "Drogerie", "Sonstiges"];
+  const neueId = () => Date.now() + Math.random();
+
+  let rezepte = [];
+  try {
+    const g = JSON.parse(localStorage.getItem(REZEPTE));
+    if (g && Array.isArray(g.rezepte)) rezepte = g.rezepte;
+    else rezepte = [beispiel()];       // beim ersten Öffnen ein Beispiel
+  } catch (e) { rezepte = [beispiel()]; }
+
+  function speichern() {
+    try { localStorage.setItem(REZEPTE, JSON.stringify({ rezepte })); } catch (e) {}
+  }
+
+  function beispiel() {
+    return {
+      id: neueId(), titel: "Pfannkuchen", portionen: 4,
+      zutaten: [
+        { name: "Mehl", qty: "250 g", cat: "Vorrat" },
+        { name: "Milch", qty: "500 ml", cat: "Kühlregal" },
+        { name: "Eier", qty: "3", cat: "Kühlregal" },
+        { name: "Salz", qty: "1 Prise", cat: "Vorrat" },
+        { name: "Butter", qty: "", cat: "Kühlregal" }
+      ],
+      schritte: "1. Mehl, Milch, Eier und Salz glatt rühren.\n2. Teig 10 Minuten ruhen lassen.\n3. Butter in der Pfanne schmelzen, dünn Teig hineingeben.\n4. Von beiden Seiten goldbraun backen."
+    };
+  }
+
+  const $ = id => document.getElementById(id);
+  const finde = id => rezepte.find(r => String(r.id) === String(id));
+
+  // ---------- Mengen umrechnen ("250 g" für 4 → "125 g" für 2) ----------
+  const BRUECHE = { "½": .5, "¼": .25, "¾": .75, "⅓": 1/3, "⅔": 2/3 };
+  // stueck = true: reine Stückzahlen aufrunden (1,5 Eier → 2 Eier kaufen)
+  function umrechnen(qty, faktor, stueck) {
+    if (!qty || faktor === 1) return qty || "";
+    const m = qty.match(/^\s*(\d+(?:[.,]\d+)?(?:\s*\/\s*\d+)?|[½¼¾⅓⅔])(.*)$/);
+    if (!m) return qty;                       // z. B. "etwas" bleibt so
+    let zahl;
+    if (BRUECHE[m[1]]) zahl = BRUECHE[m[1]];
+    else if (m[1].includes("/")) { const [a, b] = m[1].split("/"); zahl = parseFloat(a) / parseFloat(b); }
+    else zahl = parseFloat(m[1].replace(",", "."));
+    let neu = Math.round(zahl * faktor * 100) / 100;
+    if (stueck && !m[2].trim()) neu = Math.ceil(neu);
+    return String(neu).replace(".", ",") + m[2];
+  }
+
+  // ---------- Seiten wechseln über die Adresse (#neu, #r/123, #b/123) ----------
+  let aktuell = null;      // angezeigtes Rezept
+  let portionen = 1;       // eingestellte Portionen in der Ansicht
+  let abgewaehlt = new Set();
+
+  function zeigen() {
+    const h = location.hash;
+    ["uebersicht", "ansicht", "formular"].forEach(id => $(id).hidden = true);
+    $("meldung").textContent = "";
+    window.scrollTo(0, 0);
+
+    if (h === "#neu") return formular(null);
+    if (h.startsWith("#b/") && finde(h.slice(3))) return formular(finde(h.slice(3)));
+    if (h.startsWith("#r/") && finde(h.slice(3))) return ansicht(finde(h.slice(3)));
+    uebersicht();
+  }
+  window.addEventListener("hashchange", zeigen);
+
+  // ---------- Übersicht ----------
+  function uebersicht() {
+    $("uebersicht").hidden = false;
+    document.title = "Rezeptbuch";
+    $("anzahl").textContent = rezepte.length === 1 ? "1 Rezept" : `${rezepte.length} Rezepte`;
+    const ul = $("rezeptliste");
+    ul.innerHTML = "";
+    if (!rezepte.length) { ul.innerHTML = `<li class="leer">Noch keine Rezepte. Schreib dein erstes auf!</li>`; return; }
+    [...rezepte].sort((a, b) => a.titel.localeCompare(b.titel, "de")).forEach(r => {
+      const li = document.createElement("li");
+      const a = document.createElement("a");
+      a.href = "#r/" + r.id;
+      a.innerHTML = `<span class="titel"></span><span class="info"></span>`;
+      a.querySelector(".titel").textContent = r.titel;
+      a.querySelector(".info").textContent = `${r.zutaten.length} Zutaten`;
+      li.appendChild(a);
+      ul.appendChild(li);
+    });
+  }
+
+  // ---------- Ein Rezept ansehen ----------
+  function ansicht(r) {
+    if (aktuell !== r) { aktuell = r; portionen = r.portionen; abgewaehlt = new Set(); }
+    $("ansicht").hidden = false;
+    document.title = r.titel;
+    $("a-titel").textContent = r.titel;
+    $("a-schritte").textContent = r.schritte || "–";
+    zutatenZeichnen();
+  }
+
+  // Was steht schon (noch offen) auf der Einkaufsliste?
+  function listeLesen() {
+    try {
+      const g = JSON.parse(localStorage.getItem(LISTE));
+      if (Array.isArray(g)) return { artikel: g, reihenfolge: [] };
+      if (g) return { artikel: g.artikel || [], reihenfolge: g.reihenfolge || [] };
+    } catch (e) {}
+    return { artikel: [], reihenfolge: [] };
+  }
+  const gleich = (a, b) => a.trim().toLowerCase() === b.trim().toLowerCase();
+  const stehtDrauf = (liste, name) => liste.artikel.some(a => !a.done && gleich(a.name, name));
+
+  function zutatenZeichnen() {
+    const r = aktuell, faktor = portionen / r.portionen;
+    $("a-portionen").textContent = portionen;
+    $("a-personen").textContent = portionen === 1 ? "Person" : "Personen";
+    $("weniger").disabled = portionen <= 1;
+
+    const liste = listeLesen();
+    const ul = $("a-zutaten");
+    ul.innerHTML = "";
+    if (!r.zutaten.length) ul.innerHTML = `<li class="leer" style="margin:0">Keine Zutaten eingetragen.</li>`;
+    r.zutaten.forEach((z, i) => {
+      const li = document.createElement("li");
+      const drauf = stehtDrauf(liste, z.name);
+      if (abgewaehlt.has(i) || drauf) li.classList.add("weg");
+      li.innerHTML = `<label><input type="checkbox"><span class="name"></span><span class="menge"></span></label>`;
+      const box = li.querySelector("input");
+      box.checked = !abgewaehlt.has(i) && !drauf;
+      box.disabled = drauf;
+      box.addEventListener("change", () => {
+        box.checked ? abgewaehlt.delete(i) : abgewaehlt.add(i);
+        li.classList.toggle("weg", !box.checked);
+        knopfPruefen();
+      });
+      li.querySelector(".name").textContent = z.name;
+      li.querySelector(".menge").textContent = umrechnen(z.qty, faktor);
+      if (drauf) {
+        const s = document.createElement("span");
+        s.className = "steht"; s.textContent = "steht schon drauf";
+        li.appendChild(s);
+      }
+      ul.appendChild(li);
+    });
+    knopfPruefen();
+  }
+  function knopfPruefen() {
+    const n = $("a-zutaten").querySelectorAll("input:checked").length;
+    $("auf-liste").disabled = !n;
+    $("auf-liste").style.opacity = n ? 1 : .4;
+  }
+
+  $("weniger").addEventListener("click", () => { if (portionen > 1) { portionen--; zutatenZeichnen(); } });
+  $("mehr").addEventListener("click", () => { if (portionen < 99) { portionen++; zutatenZeichnen(); } });
+
+  // ---------- Zutaten auf die Einkaufsliste schreiben ----------
+  $("auf-liste").addEventListener("click", () => {
+    const r = aktuell, faktor = portionen / r.portionen;
+    const liste = listeLesen();      // immer frisch lesen, damit nichts überschrieben wird
+    let dazu = 0;
+    r.zutaten.forEach((z, i) => {
+      if (abgewaehlt.has(i) || stehtDrauf(liste, z.name)) return;
+      liste.artikel.push({ id: neueId(), name: z.name, qty: umrechnen(z.qty, faktor, true), cat: z.cat || "Sonstiges", done: false });
+      dazu++;
+    });
+    try { localStorage.setItem(LISTE, JSON.stringify(liste)); } catch (e) {}
+    $("meldung").innerHTML = "";
+    $("meldung").append(dazu === 1 ? "1 Zutat steht jetzt auf der " : `${dazu} Zutaten stehen jetzt auf der `);
+    const link = document.createElement("a");
+    link.href = "../"; link.textContent = "Einkaufsliste";
+    $("meldung").append(link, " ✓");
+    zutatenZeichnen();
+  });
+
+  $("bearbeiten").addEventListener("click", () => location.hash = "#b/" + aktuell.id);
+  $("loeschen").addEventListener("click", () => {
+    if (!confirm(`„${aktuell.titel}“ wirklich löschen?`)) return;
+    rezepte = rezepte.filter(r => r !== aktuell);
+    speichern();
+    location.hash = "";
+  });
+
+  // ---------- Rezept schreiben / ändern ----------
+  let inBearbeitung = null;
+  const MUELL = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>`;
+
+  function zutatZeile(z = { name: "", qty: "", cat: "Sonstiges" }) {
+    const li = document.createElement("li");
+    li.innerHTML = `
+      <input class="z-name" placeholder="Zutat" autocomplete="off">
+      <input class="z-menge" placeholder="Menge" autocomplete="off">
+      <select class="z-kat">${KATEGORIEN.map(k => `<option></option>`).join("")}</select>
+      <button type="button" class="raus" title="Zutat entfernen" aria-label="Zutat entfernen">${MUELL}</button>`;
+    li.querySelectorAll("option").forEach((o, i) => o.textContent = KATEGORIEN[i]);
+    li.querySelector(".z-name").value = z.name;
+    li.querySelector(".z-menge").value = z.qty;
+    li.querySelector(".z-kat").value = KATEGORIEN.includes(z.cat) ? z.cat : "Sonstiges";
+    li.querySelector(".raus").addEventListener("click", () => li.remove());
+    $("f-zutaten").appendChild(li);
+    return li;
+  }
+
+  function formular(r) {
+    inBearbeitung = r;
+    $("formular").hidden = false;
+    document.title = r ? "Rezept ändern" : "Neues Rezept";
+    $("abbrechen").href = r ? "#r/" + r.id : "#";
+    $("f-titel").value = r ? r.titel : "";
+    $("f-portionen").value = r ? r.portionen : 2;
+    $("f-schritte").value = r ? r.schritte : "";
+    $("f-zutaten").innerHTML = "";
+    (r && r.zutaten.length ? r.zutaten : [undefined, undefined, undefined]).forEach(z => zutatZeile(z));
+    if (!r) $("f-titel").focus();
+  }
+
+  $("f-mehr").addEventListener("click", () => zutatZeile().querySelector(".z-name").focus());
+
+  $("f").addEventListener("submit", e => {
+    e.preventDefault();
+    const titel = $("f-titel").value.trim();
+    if (!titel) return;
+    const daten = {
+      titel,
+      portionen: Math.min(99, Math.max(1, parseInt($("f-portionen").value) || 1)),
+      zutaten: [...$("f-zutaten").children]
+        .map(li => ({
+          name: li.querySelector(".z-name").value.trim(),
+          qty: li.querySelector(".z-menge").value.trim(),
+          cat: li.querySelector(".z-kat").value
+        }))
+        .filter(z => z.name),
+      schritte: $("f-schritte").value.trim()
+    };
+    let r = inBearbeitung;
+    if (r) { Object.assign(r, daten); aktuell = null; }   // Portionen in der Ansicht neu setzen
+    else { r = { id: neueId(), ...daten }; rezepte.push(r); }
+    speichern();
+    location.hash = "#r/" + r.id;
+  });
+
+  // Zurück aus der Einkaufsliste: anzeigen, was inzwischen schon draufsteht
+  window.addEventListener("pageshow", e => { if (e.persisted) zeigen(); });
+
+  speichern();   // Beispielrezept gleich sichern
+  zeigen();
+
+  // ---------- Offline-Betrieb ----------
+  if ("serviceWorker" in navigator && location.protocol === "https:") {
+    navigator.serviceWorker.register("../sw.js").catch(() => {});
+  }
+</script>
+</body>
+</html>

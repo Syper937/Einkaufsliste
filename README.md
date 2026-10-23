@@ -12,13 +12,22 @@ Eine interaktive Einkaufsliste im Look eines linierten Notizblocks – gebaut mi
 - Die Liste wird im Browser des Geräts gespeichert – sie bleibt privat und wird nicht ins Internet hochgeladen
 - Funktioniert nach dem ersten Öffnen auch offline
 
+## Rezeptbuch
+Oben rechts auf **„Rezepte →“** tippen.
+- Rezepte mit Zutaten (Menge + Kategorie) und Zubereitung aufschreiben, ändern, löschen
+- Portionen mit − / + umstellen – die Mengen rechnen sich mit
+- Haken weg bei allem, was schon zu Hause ist, dann **„auf die Einkaufsliste“**: die Zutaten landen in der richtigen Kategorie; was schon offen auf der Liste steht, kommt nicht doppelt dazu
+- Beide Teile teilen sich den Speicher im Browser – kein Server, kein Konto
+
 ## Auf dem iPhone als App
 In Safari öffnen → Teilen-Symbol → **„Zum Home-Bildschirm“**.
 
 ## Dateien
 | Datei | Wozu |
 | --- | --- |
-| `index.html` | Die ganze App (Design, Logik, eingebettete Schrift) |
+| `index.html` | Die Einkaufsliste (Design und Logik) |
+| `rezepte/index.html` | Das Rezeptbuch |
+| `schrift.woff` | Die Handschrift, von beiden Seiten genutzt |
 | `manifest.webmanifest` | Name und Symbol für den Home-Bildschirm |
 | `sw.js` | Speichert die App zwischen, damit sie offline startet |
 | `icon-180.png`, `icon-512.png` | App-Symbole |
