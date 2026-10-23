@@ -173,11 +173,15 @@
   .feld span { color: var(--tinte-hell); font-size: 22px; white-space: nowrap; }
   #f-titel { width: 100%; font-size: 34px; font-weight: 700; height: calc(var(--zeile) * 2); }
   #f-portionen { width: 70px; }
-  .zeilen li {
-    display: grid; grid-template-columns: minmax(0,1fr) 90px 140px 30px;
-    gap: 8px; height: var(--zeile);
+  /* Zutaten als Spalten: Zutat | Menge | Kategorie | Mülltonne */
+  .zeilen li, .spalten {
+    display: grid; grid-template-columns: minmax(0,1fr) 90px 190px 30px;
+    gap: 8px; height: var(--zeile); align-items: center;
   }
   .zeilen li > * { min-width: 0; }
+  .zeilen li input:not(:first-child), .zeilen select { border-left: 1px dashed #d6cfbf; padding-left: 6px; }
+  .spalten { font-size: 18px; color: var(--grau); }
+  .spalten span:not(:first-child) { padding-left: 7px; }
   .zeilen .raus { color: var(--rot); padding: 0; display: flex; align-items: center; justify-content: center; }
   .zeilen .raus svg { width: 20px; height: 20px; }
   /* Ein Schritt = ein Feld, das mitwächst */
@@ -195,18 +199,13 @@
     body { font-size: 24px; padding-left: 8px; padding-right: 8px; }
     h1 { font-size: 40px; }
     .seite { padding-left: 66px; padding-right: 14px; }
-    /* Zutat: Name in einer Zeile, darunter Menge + Kategorie + Mülltonne */
-    .zeilen li {
-      grid-template-columns: 80px minmax(0,1fr) 30px;
-      grid-template-areas: "name name name" "menge kat raus";
-      height: calc(var(--zeile) * 2);
-      gap: 0 8px;
-    }
-    .zeilen .z-name { grid-area: name; }
-    .zeilen .z-menge { grid-area: menge; }
-    .zeilen .z-kat { grid-area: kat; }
-    .zeilen .raus { grid-area: raus; }
-    .zeilen .z-kat { font-size: 20px; }
+    /* Spalten auch auf dem Handy, nur schmaler */
+    .zeilen li, .spalten { grid-template-columns: minmax(0,1fr) 62px 100px 22px; gap: 4px; }
+    .zeilen .z-name { font-size: 22px; }
+    .zeilen .z-menge { font-size: 20px; }
+    .zeilen .z-kat { font-size: 17px; -webkit-appearance: none; appearance: none; text-overflow: ellipsis; white-space: nowrap; overflow: hidden; }
+    .zeilen .raus svg { width: 18px; height: 18px; }
+    .spalten { font-size: 16px; }
   }
 </style>
 </head>
@@ -259,6 +258,7 @@
         <label class="feld"><span>für</span><input id="f-portionen" type="number" min="1" max="99" value="2" inputmode="numeric"><span>Personen</span></label>
 
         <h2>Zutaten</h2>
+        <div class="spalten" aria-hidden="true"><span>Zutat</span><span>Menge</span><span>Kategorie</span><span></span></div>
         <ul class="zeilen" id="f-zutaten"></ul>
         <button type="button" class="leise" id="f-mehr" style="padding:0">+ noch eine Zutat</button>
 
