@@ -164,7 +164,9 @@
   .hinweis { font-size: 20px; color: var(--tinte-hell); margin: 0; min-height: var(--zeile); }
   .meldung { font-size: 22px; color: var(--gruen); font-weight: 700; margin: 0; min-height: var(--zeile); }
   .meldung a { color: var(--rot); }
-  .schritte { white-space: pre-wrap; margin: 0; overflow-wrap: anywhere; }
+  /* Zubereitung als nummerierte Schritte */
+  .schritte li { display: flex; gap: 8px; overflow-wrap: anywhere; min-height: var(--zeile); }
+  .nr { color: var(--rot); font-weight: 700; flex: none; min-width: 30px; }
 
   /* ---------- Bearbeiten ---------- */
   .feld { display: flex; gap: 10px; align-items: center; }
@@ -178,10 +180,13 @@
   .zeilen li > * { min-width: 0; }
   .zeilen .raus { color: var(--rot); padding: 0; display: flex; align-items: center; justify-content: center; }
   .zeilen .raus svg { width: 20px; height: 20px; }
+  /* Ein Schritt = ein Feld, das mitwächst */
+  .f-schritte li { display: flex; gap: 8px; }
   textarea {
-    display: block; width: 100%; resize: vertical;
+    display: block; flex: 1; min-width: 0;
+    resize: none; overflow: hidden;
     line-height: var(--zeile);
-    min-height: calc(var(--zeile) * 6);
+    height: var(--zeile); min-height: var(--zeile);
     padding: 0 2px;
   }
 
@@ -238,7 +243,7 @@
       <p class="meldung" id="meldung"></p>
 
       <h2>Zubereitung</h2>
-      <p class="schritte" id="a-schritte"></p>
+      <ul class="schritte" id="a-schritte"></ul>
 
       <div class="knoepfe">
         <button class="leise" id="bearbeiten">bearbeiten</button>
@@ -258,7 +263,8 @@
         <button type="button" class="leise" id="f-mehr" style="padding:0">+ noch eine Zutat</button>
 
         <h2>Zubereitung</h2>
-        <textarea id="f-schritte" placeholder="1. Erst …&#10;2. Dann …"></textarea>
+        <ul class="f-schritte" id="f-schritte"></ul>
+        <button type="button" class="leise" id="f-schritt" style="padding:0">+ weiteren Schritt</button>
 
         <div class="knoepfe"><button class="gruen" type="submit">speichern</button></div>
       </form>
@@ -296,11 +302,24 @@
         { name: "Salz", qty: "1 Prise", cat: "Vorrat" },
         { name: "Butter", qty: "", cat: "Kühlregal" }
       ],
-      schritte: "1. Mehl, Milch, Eier und Salz glatt rühren.\n2. Teig 10 Minuten ruhen lassen.\n3. Butter in der Pfanne schmelzen, dünn Teig hineingeben.\n4. Von beiden Seiten goldbraun backen."
+      schritte: [
+        "Mehl, Milch, Eier und Salz glatt rühren.",
+        "Teig 10 Minuten ruhen lassen.",
+        "Butter in der Pfanne schmelzen, dünn Teig hineingeben.",
+        "Von beiden Seiten goldbraun backen."
+      ]
     };
   }
 
   const $ = id => document.getElementById(id);
+
+  // Schritte als Liste. Ältere Rezepte hatten einen Freitext – den Zeile für Zeile aufteilen.
+  function schritteVon(r) {
+    if (Array.isArray(r.schritte)) return r.schritte.filter(t => t.trim());
+    return String(r.schritte || "").split("\n")
+      .map(t => t.replace(/^\s*\d+\s*[.)]\s*/, "").trim())
+      .filter(Boolean);
+  }
   const finde = id => rezepte.find(r => String(r.id) === String(id));
 
   // ---------- Mengen umrechnen ("250 g" für 4 → "125 g" für 2) ----------
@@ -363,7 +382,16 @@
     $("ansicht").hidden = false;
     document.title = r.titel;
     $("a-titel").textContent = r.titel;
-    $("a-schritte").textContent = r.schritte || "–";
+    const ol = $("a-schritte");
+    ol.innerHTML = "";
+    const schritte = schritteVon(r);
+    if (!schritte.length) ol.innerHTML = `<li class="leer" style="margin:0">Noch keine Schritte eingetragen.</li>`;
+    schritte.forEach((t, i) => {
+      const li = document.createElement("li");
+      li.innerHTML = `<span class="nr">${i + 1}.</span><span></span>`;
+      li.lastChild.textContent = t;
+      ol.appendChild(li);
+    });
     zutatenZeichnen();
   }
 
@@ -476,11 +504,39 @@
     $("abbrechen").href = r ? "#r/" + r.id : "#";
     $("f-titel").value = r ? r.titel : "";
     $("f-portionen").value = r ? r.portionen : 2;
-    $("f-schritte").value = r ? r.schritte : "";
+    $("f-schritte").innerHTML = "";
+    const schritte = r ? schritteVon(r) : [];
+    // immer mindestens drei Schritte zum Ausfüllen
+    for (let i = 0; i < Math.max(3, schritte.length); i++) schrittZeile(schritte[i] || "");
     $("f-zutaten").innerHTML = "";
     (r && r.zutaten.length ? r.zutaten : [undefined, undefined, undefined]).forEach(z => zutatZeile(z));
     if (!r) $("f-titel").focus();
   }
+
+  // ---------- Schritte im Formular ----------
+  function hoehe(t) { t.style.height = "auto"; t.style.height = t.scrollHeight + "px"; }
+
+  function schrittZeile(text = "") {
+    const ul = $("f-schritte");
+    const li = document.createElement("li");
+    li.innerHTML = `<span class="nr">${ul.children.length + 1}.</span><textarea rows="1"></textarea>`;
+    const t = li.querySelector("textarea");
+    t.value = text;
+    t.placeholder = ["Erst …", "Dann …", "Zum Schluss …"][ul.children.length] || "Und dann …";
+    t.setAttribute("aria-label", `Schritt ${ul.children.length + 1}`);
+    t.addEventListener("input", () => hoehe(t));
+    // Enter springt zum nächsten Schritt (und legt ihn an, wenn es der letzte war)
+    t.addEventListener("keydown", e => {
+      if (e.key !== "Enter" || e.shiftKey || e.isComposing) return;
+      e.preventDefault();
+      const naechster = li.nextElementSibling ? li.nextElementSibling.querySelector("textarea") : schrittZeile();
+      naechster.focus();
+    });
+    ul.appendChild(li);
+    requestAnimationFrame(() => hoehe(t));
+    return t;
+  }
+  $("f-schritt").addEventListener("click", () => schrittZeile().focus());
 
   $("f-mehr").addEventListener("click", () => zutatZeile().querySelector(".z-name").focus());
 
@@ -498,7 +554,8 @@
           cat: li.querySelector(".z-kat").value
         }))
         .filter(z => z.name),
-      schritte: $("f-schritte").value.trim()
+      // leere Schritte fallen weg, der Rest wird neu durchnummeriert
+      schritte: [...$("f-schritte").querySelectorAll("textarea")].map(t => t.value.trim()).filter(Boolean)
     };
     let r = inBearbeitung;
     if (r) { Object.assign(r, daten); aktuell = null; }   // Portionen in der Ansicht neu setzen

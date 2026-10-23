@@ -14,7 +14,8 @@ Eine interaktive Einkaufsliste im Look eines linierten Notizblocks – gebaut mi
 
 ## Rezeptbuch
 Oben rechts auf **„Rezepte →“** tippen.
-- Rezepte mit Zutaten (Menge + Kategorie) und Zubereitung aufschreiben, ändern, löschen
+- Rezepte mit Zutaten (Menge + Kategorie) und nummerierten Zubereitungsschritten aufschreiben, ändern, löschen
+- Neue Rezepte starten mit drei Schritten, „+ weiteren Schritt“ hängt den nächsten an; leere Schritte fallen beim Speichern weg
 - Portionen mit − / + umstellen – die Mengen rechnen sich mit
 - Haken weg bei allem, was schon zu Hause ist, dann **„auf die Einkaufsliste“**: die Zutaten landen in der richtigen Kategorie; was schon offen auf der Liste steht, kommt nicht doppelt dazu
 - Beide Teile teilen sich den Speicher im Browser – kein Server, kein Konto
