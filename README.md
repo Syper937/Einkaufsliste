@@ -13,7 +13,9 @@ Eine interaktive Einkaufsliste im Look eines linierten Notizblocks – gebaut mi
 - Funktioniert nach dem ersten Öffnen auch offline
 
 ## Rezeptbuch
-Oben rechts auf **„Rezepte →“** tippen.
+Oben rechts auf **„Rezepte →“** tippen. Das Rezeptbuch hat bewusst ein schlichtes, klares Design – der Notizblock-Look bleibt der Einkaufsliste vorbehalten.
+- Neues Rezept mit zwei Reitern: **Selbst eintippen** oder **Aus Text einfügen**
+- Symbole oben rechts: Rezeptbuch sichern, Sicherung laden, Hilfe – jede Aktion fragt vorher mit Ja/Nein nach
 - Rezepte mit Zutaten (Menge + Kategorie) und nummerierten Zubereitungsschritten aufschreiben, ändern, löschen
 - Neue Rezepte starten mit drei Schritten, „+ weiteren Schritt“ hängt den nächsten an; leere Schritte fallen beim Speichern weg
 - Portionen mit − / + umstellen – die Mengen rechnen sich mit

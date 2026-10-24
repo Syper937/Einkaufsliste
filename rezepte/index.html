@@ -5,412 +5,468 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Rezeptbuch</title>
 <!-- Gehört zur Einkaufsliste-App: gleiche Adresse, gleicher Speicher -->
-<meta name="theme-color" content="#d9d2c3">
+<meta name="theme-color" content="#f4f2ee">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Einkauf">
 <link rel="apple-touch-icon" href="../icon-180.png">
 <link rel="manifest" href="../manifest.webmanifest">
 <style>
-  /* Handschrift "Caveat" (SIL Open Font License) – dieselbe Datei wie die Einkaufsliste */
-  @font-face {
-    font-family: "Kuli";
-    src: url("../schrift.woff") format("woff");
-    font-weight: 400 700;
-  }
-
+  /* Das Rezeptbuch ist bewusst schlicht: klare Systemschrift, weiße Karten.
+     Der Notizblock-Look bleibt der Einkaufsliste vorbehalten. */
   :root {
-    --zeile: 36px;
-    --tinte: #1d3c8f;
-    --tinte-hell: #6b7fb8;
-    --rot: #c2402f;
+    --hg: #f4f2ee;          /* Hintergrund */
+    --karte: #ffffff;
+    --text: #1d1d1f;
+    --text2: #6e6c69;       /* Nebentext */
+    --linie: #e7e3dc;
+    --feld: #f7f5f1;        /* Eingabefelder */
     --gruen: #2e8b4f;
-    --papier: #fdfbf3;
-    --linie: #b8d0e8;
-    --rand: #e8a3a3;
-    --tisch: #d9d2c3;
-    --grau: #a9a49a;
+    --gruen-dunkel: #246f3f;
+    --gruen-hell: #e6f3ea;
+    --rot: #c2402f;
+    --rot-hell: #fbebe8;
+    --beige: #efe9df;
+    --schatten: 0 1px 2px rgba(0,0,0,.05), 0 2px 8px rgba(0,0,0,.04);
   }
   * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
   body {
     margin: 0;
     min-height: 100vh;
-    background: var(--tisch);
-    padding: max(32px, env(safe-area-inset-top)) 16px max(32px, env(safe-area-inset-bottom));
-    -webkit-text-size-adjust: 100%;
-    touch-action: manipulation;
-    font-family: "Kuli", "Segoe Print", "Ink Free", cursive;
-    color: var(--tinte);
-    font-size: 26px;
-    line-height: var(--zeile);
+    background: var(--hg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 17px;
+    line-height: 1.45;
+    padding: 0 max(16px, env(safe-area-inset-right)) max(32px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
   }
   [hidden] { display: none !important; }
+  .app { max-width: 640px; margin: 0 auto; }
+  a { color: var(--gruen); text-decoration: none; }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  button { cursor: pointer; background: none; border: none; padding: 0; }
+  ul, ol { list-style: none; margin: 0; padding: 0; }
 
-  /* ---------- Der Notizblock (wie bei der Einkaufsliste) ---------- */
-  .block {
-    max-width: 600px;
-    margin: 0 auto;
-    background: var(--papier);
-    border-radius: 4px 4px 2px 2px;
-    box-shadow: 0 1px 2px rgba(0,0,0,.15), 0 12px 30px rgba(0,0,0,.18);
+  /* ---------- Kopfleiste ---------- */
+  .leiste {
+    position: sticky; top: 0; z-index: 5;
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    min-height: 52px; padding-top: env(safe-area-inset-top);
+    margin: 0 -16px; padding-left: 16px; padding-right: 8px;
+    background: rgba(244,242,238,.92);
+    -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
   }
-  .spirale {
-    height: 44px;
-    border-bottom: 1px dashed #d6cfbf;
-    background: radial-gradient(circle at 50% 60%, var(--tisch) 0 7px, transparent 8px) 0 0 / 34px 44px repeat-x;
+  .zurueck { font-size: 17px; font-weight: 500; color: var(--gruen); white-space: nowrap; }
+  .leiste-titel { font-weight: 600; font-size: 17px; flex: 1; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .leiste-knopf { color: var(--gruen); font-weight: 600; font-size: 17px; padding: 8px; }
+  .symbole { display: flex; gap: 2px; }
+  .symbol {
+    width: 42px; height: 42px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: var(--text);
   }
-  .seite {
-    padding: var(--zeile) 24px calc(var(--zeile) * 2) 72px;
-    min-height: calc(var(--zeile) * 16);
-    background:
-      linear-gradient(to right, transparent 56px, var(--rand) 56px, var(--rand) 58px, transparent 58px),
-      repeating-linear-gradient(to bottom, transparent 0, transparent calc(var(--zeile) - 1px), var(--linie) calc(var(--zeile) - 1px), var(--linie) var(--zeile));
-    background-position: 0 0, 0 -3px;
-  }
+  .symbol:hover, .symbol:focus-visible { background: rgba(0,0,0,.06); }
+  .symbol svg { width: 23px; height: 23px; }
+  .symbol.gefahr { color: var(--rot); }
 
-  h1 {
-    margin: 0;
-    font-size: 48px;
-    line-height: calc(var(--zeile) * 2);
-    font-weight: 700;
-    transform: rotate(-1deg);
-    transform-origin: left;
-    overflow-wrap: anywhere;
-  }
-  h2 {
-    margin: var(--zeile) 0 0;
-    height: var(--zeile);
-    font-size: 26px; font-weight: 700;
-    color: var(--rot);
-    text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px;
-  }
-  .klein { color: var(--tinte-hell); font-size: 22px; margin: 0; min-height: var(--zeile); }
+  h1 { font-size: 30px; line-height: 1.15; font-weight: 700; letter-spacing: -.01em; margin: 6px 0 4px; overflow-wrap: anywhere; }
+  h2 { font-size: 19px; font-weight: 700; margin: 0 0 10px; }
+  .unter { color: var(--text2); font-size: 15px; margin: 0; }
 
-  a { color: inherit; }
-  input, select, button, textarea {
-    font: inherit; color: var(--tinte);
-    background: transparent; border: none;
-    padding: 0 2px;
+  /* ---------- Knöpfe ---------- */
+  .knopf {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    min-height: 46px; padding: 0 18px; border-radius: 12px;
+    font-size: 16px; font-weight: 600; text-align: center; line-height: 1.2;
   }
-  input, select, button { height: var(--zeile); }
-  input::placeholder, textarea::placeholder { color: var(--grau); }
-  input:focus, select:focus, textarea:focus { outline: none; background: rgba(29,60,143,.06); border-radius: 4px; }
-  select { font-size: 22px; cursor: pointer; }
-  button { cursor: pointer; }
+  .knopf.haupt { background: var(--gruen); color: #fff; }
+  .knopf.haupt:hover { background: var(--gruen-dunkel); }
+  .knopf.haupt:disabled { background: #a9cdb5; cursor: default; }
+  .knopf.zweit { background: var(--karte); color: var(--text); border: 1px solid var(--linie); }
+  .knopf.text { min-height: 40px; padding: 0; color: var(--gruen); }
+  .knopf.breit { width: 100%; }
+  .knopf.gefahr { background: var(--rot); color: #fff; }
+  .aktionen { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+  .aktionen .knopf { flex: 1 1 140px; white-space: nowrap; padding: 0 12px; }
+  .aktionen.stapel { flex-direction: column; }
+  .aktionen.stapel .knopf { flex: none; width: 100%; }
 
-  /* Kopfzeile: Links oben */
-  .kopf { position: relative; z-index: 1; display: flex; justify-content: space-between; height: var(--zeile); font-size: 22px; font-weight: 700; }
-  .kopf a, .kopf button { color: var(--rot); text-decoration: none; font-size: 22px; font-weight: 700; padding: 0; }
-
-  /* Grüner Knopf – passt in eine Linie */
-  .gruen {
-    background: var(--gruen); color: #fff;
-    font-size: 24px; font-weight: 700; line-height: 1;
-    height: 28px; margin: 3px 0 5px;
-    border-radius: 8px; padding: 0 14px;
-    white-space: nowrap;
-    box-shadow: 0 2px 0 #1f6638;
-  }
-  .gruen:hover { background: #267a44; }
-  .gruen:active { transform: translateY(2px); box-shadow: none; }
-  .leise { color: var(--tinte-hell); font-size: 22px; padding: 0 6px; }
-  .rotstift { color: var(--rot); font-size: 22px; padding: 0 6px; }
-  .knoepfe { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-top: var(--zeile); }
+  /* ---------- Karten ---------- */
+  .karte { background: var(--karte); border-radius: 16px; padding: 16px; margin-top: 14px; box-shadow: var(--schatten); }
+  .hinweis { color: var(--text2); font-size: 14px; margin: 10px 0 0; }
 
   /* ---------- Übersicht ---------- */
-  ul { list-style: none; margin: 0; padding: 0; }
-  .rezeptliste { margin-top: var(--zeile); }
-  .rezeptliste li { height: var(--zeile); }
-  .rezeptliste a {
-    display: flex; gap: 10px; align-items: baseline;
-    text-decoration: none; height: var(--zeile);
+  .suche {
+    display: flex; align-items: center; gap: 8px;
+    margin-top: 16px; height: 46px; padding: 0 12px;
+    background: var(--karte); border: 1px solid var(--linie); border-radius: 12px;
   }
-  .rezeptliste .titel { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-  .rezeptliste .titel::before { content: "• "; color: var(--rot); }
-  .rezeptliste .info { color: var(--tinte-hell); font-size: 20px; white-space: nowrap; }
-  .leer { color: var(--grau); margin-top: var(--zeile); }
-  .rezeptliste .info b { color: var(--tinte); font-weight: 400; }
-
-  /* Suchfeld */
-  .suche { display: flex; align-items: center; gap: 6px; margin-top: var(--zeile); height: var(--zeile); }
-  .suche svg { width: 20px; height: 20px; flex: none; color: var(--tinte-hell); }
-  .suche input { flex: 1; min-width: 0; -webkit-appearance: none; appearance: none; }
+  .suche svg { width: 19px; height: 19px; color: var(--text2); flex: none; }
+  .suche input { flex: 1; min-width: 0; border: none; background: none; outline: none; font-size: 16px; -webkit-appearance: none; appearance: none; }
   .suche input::-webkit-search-cancel-button { display: none; }
-  .suche button { color: var(--tinte-hell); font-size: 22px; padding: 0 6px; }
+  .suche button { color: var(--text2); font-size: 15px; width: 28px; height: 28px; border-radius: 50%; background: var(--beige); }
+
+  .rezeptliste { margin-top: 14px; }
+  .rezeptliste li + li { margin-top: 8px; }
+  .rezeptliste a {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 12px; background: var(--karte); border-radius: 14px; box-shadow: var(--schatten);
+    color: var(--text);
+  }
+  .rezeptliste .bild {
+    width: 54px; height: 54px; flex: none; border-radius: 10px; object-fit: cover;
+    background: var(--beige); color: #b3a690; font-size: 22px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .rezeptliste .text { flex: 1; min-width: 0; }
+  .rezeptliste .titel { display: block; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rezeptliste .info { display: block; color: var(--text2); font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rezeptliste .info b { color: var(--gruen); font-weight: 600; }
+  .rezeptliste .pfeil { color: #c4beb4; font-size: 22px; flex: none; }
+  .leer { color: var(--text2); text-align: center; padding: 28px 12px; }
+
+  .unten-link { display: block; margin-top: 22px; text-align: center; font-size: 15px; }
 
   /* ---------- Ein Rezept ---------- */
-  .portionen { display: flex; align-items: center; gap: 8px; font-size: 22px; height: var(--zeile); }
-  .portionen button {
-    width: 30px; height: 26px; line-height: 1;
-    border: 2px solid var(--tinte); border-radius: 50% 45% 55% 48% / 60% 50% 55% 45%;
-    font-size: 22px; font-weight: 700; padding: 0;
-  }
-  .portionen b { min-width: 24px; text-align: center; font-size: 26px; }
-
-  .zutaten li { height: var(--zeile); display: flex; align-items: center; gap: 10px; }
-  .zutaten label { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; cursor: pointer; }
-  .zutaten .name { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-  .zutaten .menge { white-space: nowrap; }
-  .zutaten li.weg .name, .zutaten li.weg .menge { color: var(--grau); text-decoration: line-through; }
-  .zutaten .steht { font-size: 18px; color: var(--gruen); white-space: nowrap; }
-
-  /* Selbstgemalte Checkbox (wie in der Einkaufsliste) */
-  input[type=checkbox] {
-    appearance: none; -webkit-appearance: none;
-    width: 20px; height: 20px; margin: 0; padding: 0;
-    border: 2px solid var(--tinte);
-    border-radius: 3px 5px 2px 4px;
-    transform: rotate(-3deg);
-    cursor: pointer; position: relative; flex: none;
-  }
-  input[type=checkbox]:checked::after {
-    content: ""; position: absolute; left: 4px; top: -8px;
-    width: 9px; height: 20px;
-    border: solid var(--tinte); border-width: 0 3px 3px 0;
-    transform: rotate(40deg);
-  }
-  .hinweis { font-size: 20px; color: var(--tinte-hell); margin: 0; min-height: var(--zeile); }
-  .meldung { font-size: 22px; color: var(--gruen); font-weight: 700; margin: 0; min-height: var(--zeile); }
-  .meldung a { color: var(--rot); }
-  /* Zubereitung als nummerierte Schritte */
-  .schritte li { display: flex; gap: 8px; overflow-wrap: anywhere; min-height: var(--zeile); }
-  .nr { color: var(--rot); font-weight: 700; flex: none; min-width: 30px; }
-
-  /* ---------- Bearbeiten ---------- */
-  .feld { display: flex; gap: 10px; align-items: center; }
-  .feld span { color: var(--tinte-hell); font-size: 22px; white-space: nowrap; }
-  #f-titel { width: 100%; font-size: 34px; font-weight: 700; height: calc(var(--zeile) * 2); }
-  #f-portionen { width: 70px; }
-  /* Zutaten als Spalten: Zutat | Menge | Kategorie | Mülltonne */
-  .zeilen li, .spalten {
-    display: grid; grid-template-columns: minmax(0,1fr) 90px 190px 30px;
-    gap: 8px; height: var(--zeile); align-items: center;
-  }
-  .zeilen li > * { min-width: 0; }
-  .zeilen li input:not(:first-child), .zeilen select { border-left: 1px dashed #d6cfbf; padding-left: 6px; }
-  .spalten { font-size: 18px; color: var(--grau); }
-  .spalten span:not(:first-child) { padding-left: 7px; }
-  .zeilen .raus { color: var(--rot); padding: 0; display: flex; align-items: center; justify-content: center; }
-  .zeilen .raus svg { width: 20px; height: 20px; }
-  /* Text einfügen & erkennen */
-  .einfuegen {
-    margin: 0 -8px var(--zeile); padding: 0 8px;
-    border: 2px dashed var(--tinte-hell); border-radius: 8px;
-  }
-  .einfuegen summary {
-    cursor: pointer; color: var(--tinte); font-size: 22px; font-weight: 700;
-    height: calc(var(--zeile) - 4px); line-height: calc(var(--zeile) - 4px);
-    list-style: none;
-  }
-  .einfuegen summary::-webkit-details-marker { display: none; }
-  .einfuegen summary::before { content: "▸ "; color: var(--rot); }
-  .einfuegen[open] summary::before { content: "▾ "; }
-  .einfuegen p { margin: 0; font-size: 20px; color: var(--tinte-hell); }
-  #f-text { width: 100%; min-height: calc(var(--zeile) * 5); height: calc(var(--zeile) * 5); resize: vertical; overflow: auto; font-size: 22px; }
-  .einfuegen .knoepfe { margin-top: 0; }
-  #erkannt { min-height: 0; }
-  #erkannt:not(:empty) { padding-bottom: 4px; color: var(--gruen); font-weight: 700; }
-  #erkannt.nix { color: var(--rot); }
-  #f-quelle { flex: 1; min-width: 0; font-size: 22px; }
-
-  /* ---------- Fotos ---------- */
-  /* In der Ansicht: wie eingeklebte Fotos, bei mehreren seitlich wischen */
   .fotos {
-    display: flex; gap: 18px; align-items: center;
-    height: calc(var(--zeile) * 7); margin: 0 -24px 0 -6px; padding: 0 24px 0 6px;
+    display: flex; gap: 10px; margin: 6px -16px 0; padding: 0 16px;
     overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none;
   }
   .fotos::-webkit-scrollbar { display: none; }
   .fotos img {
-    height: calc(var(--zeile) * 6 - 8px); max-width: 88%; flex: none;
-    object-fit: cover; scroll-snap-align: center;
-    background: #fff; padding: 6px; border-radius: 2px;
-    box-shadow: 0 1px 2px rgba(0,0,0,.2), 0 6px 14px rgba(0,0,0,.15);
-    transform: rotate(-1.5deg); cursor: zoom-in;
+    height: 250px; width: 86%; flex: none; object-fit: cover; border-radius: 16px;
+    scroll-snap-align: center; background: var(--beige); cursor: zoom-in;
   }
-  .fotos img:nth-child(even) { transform: rotate(1.2deg); }
-  .fotos img:only-child { max-width: 100%; }
-  /* Großansicht beim Antippen */
-  .lupe {
-    position: fixed; inset: 0; z-index: 10; background: rgba(20,20,20,.92);
-    display: flex; align-items: center; justify-content: center; padding: 16px; cursor: zoom-out;
+  .fotos img:only-child { width: 100%; }
+  .quelle {
+    display: inline-flex; align-items: center; gap: 6px; max-width: 100%;
+    margin-top: 4px; padding: 6px 12px; border-radius: 999px;
+    background: var(--rot-hell); color: var(--rot); font-size: 15px; font-weight: 600;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
-  .lupe img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 2px; }
+  .karte-kopf { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 4px; }
+  .karte-kopf h2 { margin: 0; }
+  .portionen { display: flex; align-items: center; gap: 10px; font-size: 15px; color: var(--text2); }
+  .portionen b { color: var(--text); font-size: 17px; }
+  .portionen button {
+    width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--linie);
+    font-size: 19px; line-height: 1; color: var(--text); background: var(--karte);
+  }
+  .portionen button:disabled { opacity: .35; cursor: default; }
 
-  /* In der Liste: kleines Vorschaubild statt Punkt */
-  .rezeptliste .mini { width: 30px; height: 30px; flex: none; align-self: center; object-fit: cover; border-radius: 4px; background: #eee; }
-  .rezeptliste .mini + .titel::before { content: none; }
+  .zutaten li { display: flex; align-items: center; gap: 10px; padding: 11px 0; border-bottom: 1px solid var(--linie); }
+  .zutaten li:last-child { border-bottom: none; }
+  .zutaten label { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; cursor: pointer; }
+  .zutaten .name { flex: 1; min-width: 0; }
+  .zutaten .menge { color: var(--text2); white-space: nowrap; }
+  .zutaten li.weg .name, .zutaten li.weg .menge { color: #b0aba4; }
+  .steht { font-size: 12px; font-weight: 600; color: var(--gruen); background: var(--gruen-hell); padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+  .haken {
+    appearance: none; -webkit-appearance: none; margin: 0; flex: none;
+    width: 22px; height: 22px; border-radius: 6px; border: 2px solid #c9c3b9; cursor: pointer;
+    display: grid; place-content: center; background: var(--karte);
+  }
+  .haken:checked { background: var(--gruen); border-color: var(--gruen); }
+  .haken:checked::after { content: ""; width: 6px; height: 11px; border: solid #fff; border-width: 0 2.5px 2.5px 0; transform: translateY(-1px) rotate(45deg); }
+  .haken:disabled { opacity: .4; cursor: default; }
+  #auf-liste { margin-top: 14px; }
+  .meldung { margin: 10px 0 0; font-size: 15px; color: var(--gruen-dunkel); font-weight: 600; }
+  .meldung:empty { display: none; }
 
-  /* Im Formular */
-  .f-fotos { display: flex; flex-wrap: wrap; gap: 12px; padding-top: 6px; }
-  .f-fotos:empty { display: none; }
-  .vorschau { position: relative; width: 84px; height: 84px; }
-  .vorschau img { width: 100%; height: 100%; object-fit: cover; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,.25); }
+  .schritte li { display: flex; gap: 12px; }
+  .schritte li + li { margin-top: 14px; }
+  .nr {
+    flex: none; width: 28px; height: 28px; border-radius: 50%;
+    background: var(--gruen-hell); color: var(--gruen-dunkel);
+    font-size: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center;
+    margin-top: 0;
+  }
+  .schritte .t { flex: 1; min-width: 0; padding-top: 2px; overflow-wrap: anywhere; }
+
+  .lupe { position: fixed; inset: 0; z-index: 20; background: rgba(15,15,15,.94); display: flex; align-items: center; justify-content: center; padding: 16px; cursor: zoom-out; }
+  .lupe img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 6px; }
+
+  /* ---------- Reiter (Neues Rezept: eintippen / aus Text) ---------- */
+  .reiter { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; padding: 3px; margin-top: 8px; background: #e7e3dc; border-radius: 11px; }
+  .reiter a { text-align: center; padding: 8px 6px; border-radius: 9px; font-size: 15px; font-weight: 600; color: var(--text2); }
+  .reiter a.aktiv { background: var(--karte); color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+
+  /* ---------- Formular ---------- */
+  .feld { display: block; }
+  .feld + .feld { margin-top: 14px; }
+  .feld > span { display: block; font-size: 14px; font-weight: 600; color: var(--text2); margin-bottom: 6px; }
+  .eingabe, .zeilen input, .zeilen select, .f-schritte textarea, #i-text {
+    width: 100%; min-width: 0; height: 44px; padding: 0 12px;
+    background: var(--feld); border: 1px solid var(--linie); border-radius: 10px;
+    font-size: 16px; outline: none;             /* 16px: sonst zoomt das iPhone beim Antippen */
+  }
+  .eingabe:focus, .zeilen input:focus, .zeilen select:focus, .f-schritte textarea:focus, #i-text:focus { border-color: var(--gruen); background: var(--karte); }
+  #f-titel { font-weight: 600; }
+  #f-portionen { width: 110px; }
+
+  .foto-raster { display: flex; flex-wrap: wrap; gap: 10px; }
+  .f-fotos { display: contents; }
+  .vorschau { position: relative; width: 86px; height: 86px; }
+  .vorschau img { width: 100%; height: 100%; object-fit: cover; border-radius: 10px; }
   .vorschau button {
-    position: absolute; top: -8px; right: -8px; width: 26px; height: 26px; padding: 0;
-    border-radius: 50%; background: var(--rot); color: #fff; font-size: 16px; line-height: 26px;
-    font-family: system-ui, sans-serif;
+    position: absolute; top: -7px; right: -7px; width: 26px; height: 26px; border-radius: 50%;
+    background: var(--text); color: #fff; font-size: 13px; line-height: 26px; box-shadow: 0 0 0 2px var(--karte);
   }
-  .foto-knopf { color: var(--tinte-hell); font-size: 22px; cursor: pointer; display: inline-block; height: var(--zeile); }
-  .foto-knopf input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+  .foto-neu {
+    width: 86px; height: 86px; border-radius: 10px; border: 1.5px dashed #c9c3b9; cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+    color: var(--text2); font-size: 13px; font-weight: 600; position: relative;
+  }
+  .foto-neu b { font-size: 26px; font-weight: 400; line-height: 1; }
+  .foto-neu input, .unsichtbar { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
   #f-foto-info:empty { display: none; }
 
-  /* Sicherung */
-  .sicherung { margin-top: calc(var(--zeile) * 2); }
-  .sicherung label { cursor: pointer; }
-  .sicherung input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+  .spalten, .zeilen li { display: grid; grid-template-columns: minmax(0,1fr) 92px 150px 32px; gap: 6px; align-items: center; }
+  .spalten { font-size: 13px; font-weight: 600; color: var(--text2); margin-bottom: 6px; padding-left: 2px; }
+  .zeilen li + li { margin-top: 6px; }
+  .zeilen input, .zeilen select { height: 42px; padding: 0 10px; }
+  .zeilen select { padding-right: 4px; }
+  .raus { width: 32px; height: 42px; display: flex; align-items: center; justify-content: center; color: #a39d94; }
+  .raus:hover { color: var(--rot); }
+  .raus svg { width: 19px; height: 19px; }
 
-  /* Link zur Quelle in der Ansicht */
-  .quelle { display: inline-block; color: var(--rot); font-size: 22px; font-weight: 700; text-decoration: none; height: var(--zeile); max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .f-schritte li { display: flex; gap: 10px; align-items: flex-start; }
+  .f-schritte li + li { margin-top: 8px; }
+  .f-schritte .nr { margin-top: 8px; }
+  .f-schritte textarea { height: 44px; min-height: 44px; padding: 10px 12px; line-height: 1.4; resize: none; overflow: hidden; display: block; flex: 1; }
 
-  /* Ein Schritt = ein Feld, das mitwächst */
-  .f-schritte li { display: flex; gap: 8px; }
-  .f-schritte textarea {
-    display: block; flex: 1; min-width: 0;
-    resize: none; overflow: hidden;
-    line-height: var(--zeile);
-    height: var(--zeile); min-height: var(--zeile);
-    padding: 0 2px;
+  .banner { margin: 12px 0 0; padding: 10px 14px; border-radius: 12px; background: var(--gruen-hell); color: var(--gruen-dunkel); font-size: 15px; }
+  .banner.nix { background: var(--rot-hell); color: var(--rot); }
+  .banner:empty { display: none; }
+
+  /* ---------- Aus Text einfügen ---------- */
+  .erklaerung { color: var(--text2); font-size: 15px; margin: 0 0 12px; }
+  #i-text { height: 260px; padding: 12px; line-height: 1.45; resize: vertical; display: block; }
+
+  /* ---------- Anleitung ---------- */
+  .anleitung li { display: flex; gap: 12px; }
+  .anleitung li + li { margin-top: 12px; }
+  .anleitung .t { flex: 1; padding-top: 2px; }
+
+  /* ---------- Ja/Nein-Abfrage ---------- */
+  .dialog-grund { position: fixed; inset: 0; z-index: 30; background: rgba(0,0,0,.38); display: flex; align-items: center; justify-content: center; padding: 24px; }
+  .dialog { width: 100%; max-width: 360px; background: var(--karte); border-radius: 18px; padding: 20px; box-shadow: 0 10px 40px rgba(0,0,0,.25); }
+  .dialog h3 { margin: 0 0 6px; font-size: 18px; }
+  .dialog p { margin: 0; color: var(--text2); font-size: 15px; white-space: pre-line; }
+  .dialog-knoepfe { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 18px; }
+
+  /* ---------- Kurze Rückmeldung unten ---------- */
+  .toast {
+    position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom)); z-index: 40;
+    transform: translate(-50%, 20px); opacity: 0; transition: opacity .2s, transform .2s;
+    max-width: calc(100% - 32px); width: max-content;
+    background: #1d1d1f; color: #fff; font-size: 15px; padding: 11px 16px; border-radius: 12px;
+    pointer-events: none;
   }
+  .toast.da { opacity: 1; transform: translate(-50%, 0); }
 
-  /* Handy */
   @media (max-width: 560px) {
-    body { font-size: 24px; padding-left: 8px; padding-right: 8px; }
-    h1 { font-size: 40px; }
-    .seite { padding-left: 66px; padding-right: 14px; }
-    /* Spalten auch auf dem Handy, nur schmaler */
-    .zeilen li, .spalten { grid-template-columns: minmax(0,1fr) 62px 100px 22px; gap: 4px; }
-    .zeilen .z-name { font-size: 22px; }
-    .zeilen .z-menge { font-size: 20px; }
-    .zeilen .z-kat { font-size: 17px; -webkit-appearance: none; appearance: none; text-overflow: ellipsis; white-space: nowrap; overflow: hidden; }
-    .zeilen .raus svg { width: 18px; height: 18px; }
-    .spalten { font-size: 16px; }
+    h1 { font-size: 27px; }
+    .spalten, .zeilen li { grid-template-columns: minmax(0,1fr) 66px 104px 28px; gap: 5px; }
+    .zeilen input, .zeilen select { padding: 0 8px; }
+    .raus { width: 28px; }
+    .karte { padding: 14px; }
   }
 </style>
 </head>
 <body>
-<div class="block">
-  <div class="spirale"></div>
-  <div class="seite" id="seite">
+<div class="app">
 
-    <!-- Ansicht 1: Alle Rezepte -->
-    <section id="uebersicht" hidden>
-      <div class="kopf"><a href="../">← Einkaufsliste</a></div>
-      <h1>Rezepte</h1>
-      <p class="klein" id="anzahl"></p>
-      <div class="knoepfe" style="margin-top:0">
-        <a class="gruen" href="#neu" style="display:inline-flex;align-items:center;text-decoration:none">neues Rezept</a>
-        <button type="button" class="leise" id="aus-ablage" hidden>aus Zwischenablage</button>
+  <!-- ================= Übersicht ================= -->
+  <section id="uebersicht" hidden>
+    <header class="leiste">
+      <a href="../" class="zurueck">‹ Einkaufsliste</a>
+      <div class="symbole">
+        <button type="button" class="symbol" id="sichern" title="Rezeptbuch sichern" aria-label="Rezeptbuch sichern">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h11l3 3v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V3z"/><path d="M8 3v5h7V3"/><rect x="8" y="13" width="8" height="5" rx="1"/></svg>
+        </button>
+        <button type="button" class="symbol" id="laden-knopf" title="Sicherung laden" aria-label="Sicherung laden">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 12a8.5 8.5 0 1 0 2.5-6"/><path d="M3 4v4.5h4.5"/><path d="M12 8v4.5l3 2"/></svg>
+        </button>
+        <a class="symbol" href="#hilfe" title="Rezepte aus Instagram – so geht's" aria-label="Hilfe: Rezepte aus Instagram">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.5v.7"/><circle cx="12" cy="17" r=".6" fill="currentColor"/></svg>
+        </a>
       </div>
-      <label class="suche">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
-        <input id="suche" type="search" placeholder="Rezept oder Zutat suchen …" autocomplete="off" enterkeyhint="search">
-        <button type="button" id="suche-weg" aria-label="Suche leeren" hidden>✕</button>
-      </label>
-      <ul class="rezeptliste" id="rezeptliste" style="margin-top:0"></ul>
+    </header>
+    <input type="file" id="laden" class="unsichtbar" accept=".json,application/json" tabindex="-1" aria-hidden="true">
 
-      <div class="knoepfe sicherung">
-        <button type="button" class="leise" id="sichern" style="padding:0">Rezeptbuch sichern</button>
-        <label class="leise">Sicherung laden<input type="file" id="laden" accept=".json,application/json"></label>
+    <h1>Rezepte</h1>
+    <p class="unter" id="anzahl"></p>
+
+    <div class="aktionen">
+      <a class="knopf haupt" href="#neu">＋ Neues Rezept</a>
+      <a class="knopf zweit" href="#import">Aus Text einfügen</a>
+    </div>
+
+    <label class="suche">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+      <input id="suche" type="search" placeholder="Rezept oder Zutat suchen" autocomplete="off" enterkeyhint="search">
+      <button type="button" id="suche-weg" aria-label="Suche leeren" hidden>✕</button>
+    </label>
+
+    <ul class="rezeptliste" id="rezeptliste"></ul>
+  </section>
+
+  <!-- ================= Ein Rezept ================= -->
+  <section id="ansicht" hidden>
+    <header class="leiste">
+      <a href="#" class="zurueck">‹ Rezepte</a>
+      <div class="symbole">
+        <button type="button" class="symbol" id="bearbeiten" title="Bearbeiten" aria-label="Rezept bearbeiten">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg>
+        </button>
+        <button type="button" class="symbol gefahr" id="loeschen" title="Löschen" aria-label="Rezept löschen">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9 7V4.5h6V7"/><path d="M18 7l-.8 12.2a2 2 0 0 1-2 1.8H8.8a2 2 0 0 1-2-1.8L6 7"/><path d="M10 11v6M14 11v6"/></svg>
+        </button>
       </div>
-      <p class="hinweis" id="sicherung-info" aria-live="polite">Erstellt eine Datei mit allen Rezepten und Fotos – zum Aufheben oder für ein anderes Handy.</p>
-      <p style="margin:var(--zeile) 0 0"><a href="#hilfe" class="quelle">So holst du Rezepte aus Instagram →</a></p>
-    </section>
+    </header>
 
-    <!-- Ansicht 4: Anleitung Instagram -->
-    <section id="hilfe" hidden>
-      <div class="kopf"><a href="#">← alle Rezepte</a></div>
-      <h1>Rezepte aus Instagram</h1>
-      <p class="klein">Einmal einrichten, danach zwei Fingertipps pro Rezept.</p>
+    <div class="fotos" id="a-fotos" hidden></div>
+    <h1 id="a-titel"></h1>
+    <a class="quelle" id="a-quelle" target="_blank" rel="noopener" hidden></a>
 
-      <h2>Einmalig: Kurzbefehl anlegen</h2>
-      <ul class="schritte">
-        <li><span class="nr">1.</span><span>App <b>Kurzbefehle</b> öffnen → oben rechts <b>+</b> → oben den Namen <b>„Ins Rezeptbuch“</b> eintragen.</span></li>
-        <li><span class="nr">2.</span><span>Unten auf <b>ⓘ</b> tippen → <b>„Im Share-Sheet anzeigen“</b> einschalten. Bei den Eingaben <b>URLs</b> und <b>Text</b> auswählen.</span></li>
-        <li><span class="nr">3.</span><span>Aktion <b>„Zwischenablage abrufen“</b> hinzufügen.</span></li>
-        <li><span class="nr">4.</span><span>Aktion <b>„Text“</b> hinzufügen. Hinein: die blaue Variable <b>Zwischenablage</b>, zweimal Zeilenumbruch, dann die Variable <b>Kurzbefehleingabe</b>.</span></li>
-        <li><span class="nr">5.</span><span>Aktion <b>„In Zwischenablage kopieren“</b> hinzufügen (übernimmt den Text von eben).</span></li>
-        <li><span class="nr">6.</span><span>Aktion <b>„Mitteilung anzeigen“</b> mit „Jetzt im Rezeptbuch ‚aus Zwischenablage‘ tippen“. Fertig.</span></li>
-      </ul>
-
-      <h2>Jedes Mal</h2>
-      <ul class="schritte">
-        <li><span class="nr">1.</span><span>Beim Beitrag die <b>Beschreibung kopieren</b>. Lässt sie sich nicht markieren: Bildschirmfoto machen, im Foto lange auf den Text drücken → <b>Kopieren</b>.</span></li>
-        <li><span class="nr">2.</span><span>Im Beitrag auf <b>Teilen</b> (Papierflieger) → <b>Teilen …</b> bzw. <b>Mehr</b> → <b>„Ins Rezeptbuch“</b>.</span></li>
-        <li><span class="nr">3.</span><span>Rezeptbuch über das <b>Home-Bildschirm-Symbol</b> öffnen → <b>„aus Zwischenablage“</b> → <b>Einsetzen</b> bestätigen.</span></li>
-        <li><span class="nr">4.</span><span>Zutaten und Schritte kurz prüfen, gern noch das Bildschirmfoto als Foto anhängen → <b>speichern</b>.</span></li>
-      </ul>
-      <p class="hinweis" style="margin-top:var(--zeile)">Ohne Kurzbefehl geht es auch: Beschreibung kopieren, „aus Zwischenablage“ tippen und den Link danach ins Feld „Link“ einfügen.</p>
-    </section>
-
-    <!-- Ansicht 2: Ein Rezept -->
-    <section id="ansicht" hidden>
-      <div class="kopf"><a href="#">← alle Rezepte</a><a href="../">Einkaufsliste →</a></div>
-      <h1 id="a-titel"></h1>
-      <a class="quelle" id="a-quelle" target="_blank" rel="noopener" hidden></a>
-      <div class="fotos" id="a-fotos" hidden></div>
-      <div class="portionen">
-        für
-        <button type="button" id="weniger" aria-label="Weniger Portionen">−</button>
-        <b id="a-portionen"></b>
-        <button type="button" id="mehr" aria-label="Mehr Portionen">+</button>
-        <span id="a-personen"></span>
+    <div class="karte">
+      <div class="karte-kopf">
+        <h2>Zutaten</h2>
+        <div class="portionen">
+          <button type="button" id="weniger" aria-label="Weniger Portionen">−</button>
+          <span><b id="a-portionen"></b> <span id="a-personen"></span></span>
+          <button type="button" id="mehr" aria-label="Mehr Portionen">+</button>
+        </div>
       </div>
-
-      <h2>Zutaten</h2>
       <ul class="zutaten" id="a-zutaten"></ul>
-      <p class="hinweis" id="a-hinweis">Haken weg bei allem, was du schon zu Hause hast.</p>
-      <div><button class="gruen" id="auf-liste">auf die Einkaufsliste</button></div>
-      <p class="meldung" id="meldung"></p>
+      <p class="hinweis" id="a-hinweis">Nimm den Haken bei allem weg, was du schon zu Hause hast.</p>
+      <button type="button" class="knopf haupt breit" id="auf-liste">Auf die Einkaufsliste</button>
+      <p class="meldung" id="meldung" aria-live="polite"></p>
+    </div>
 
+    <div class="karte">
       <h2>Zubereitung</h2>
-      <ul class="schritte" id="a-schritte"></ul>
+      <ol class="schritte" id="a-schritte"></ol>
+    </div>
+  </section>
 
-      <div class="knoepfe">
-        <button class="leise" id="bearbeiten">bearbeiten</button>
-        <button class="rotstift" id="loeschen">Rezept löschen</button>
+  <!-- ================= Rezept eintippen / bearbeiten ================= -->
+  <section id="formular" hidden>
+    <header class="leiste">
+      <a href="#" class="zurueck" id="abbrechen">Abbrechen</a>
+      <span class="leiste-titel" id="f-kopf">Neues Rezept</span>
+      <button type="submit" form="f" class="leiste-knopf">Speichern</button>
+    </header>
+    <nav class="reiter" id="f-reiter"><a href="#neu" class="aktiv">Selbst eintippen</a><a href="#import">Aus Text einfügen</a></nav>
+    <p class="banner" id="erkannt" aria-live="polite"></p>
+
+    <form id="f" novalidate>
+      <div class="karte">
+        <label class="feld"><span>Name des Rezepts</span><input class="eingabe" id="f-titel" placeholder="z. B. Kürbissuppe" autocomplete="off"></label>
+        <label class="feld"><span>Portionen</span><input class="eingabe" id="f-portionen" type="number" min="1" max="99" value="2" inputmode="numeric"></label>
+        <label class="feld"><span>Link zur Quelle (optional)</span><input class="eingabe" id="f-quelle" type="url" inputmode="url" placeholder="z. B. Instagram-Beitrag" autocomplete="off"></label>
       </div>
-    </section>
 
-    <!-- Ansicht 3: Rezept schreiben / ändern -->
-    <section id="formular" hidden>
-      <form id="f">
-        <div class="kopf"><a href="#" id="abbrechen">← abbrechen</a></div>
-
-        <details class="einfuegen" id="einfuegen">
-          <summary>Rezepttext einfügen &amp; erkennen</summary>
-          <p>Kompletten Text hier hineinkopieren, z. B. eine Instagram-Beschreibung – Zutaten, Mengen und Schritte füllen sich von selbst.</p>
-          <textarea id="f-text" placeholder="Text hier einfügen …"></textarea>
-          <div class="knoepfe">
-            <button type="button" class="gruen" id="f-erkennen">erkennen</button>
-            <button type="button" class="leise" id="f-ablage" hidden>aus Zwischenablage holen</button>
-          </div>
-          <p id="erkannt" aria-live="polite"></p>
-        </details>
-
-        <input id="f-titel" placeholder="Name des Rezepts" autocomplete="off" required>
-        <label class="feld"><span>für</span><input id="f-portionen" type="number" min="1" max="99" value="2" inputmode="numeric"><span>Personen</span></label>
-        <label class="feld"><span>Link</span><input id="f-quelle" type="url" inputmode="url" placeholder="z. B. Instagram-Beitrag" autocomplete="off"></label>
-        <div class="f-fotos" id="f-fotos"></div>
-        <label class="foto-knopf">+ Foto hinzufügen<input type="file" id="f-foto" accept="image/*" multiple></label>
+      <div class="karte">
+        <h2>Fotos</h2>
+        <div class="foto-raster">
+          <div class="f-fotos" id="f-fotos"></div>
+          <label class="foto-neu"><b>＋</b>Foto<input type="file" id="f-foto" accept="image/*" multiple></label>
+        </div>
         <p class="hinweis" id="f-foto-info" aria-live="polite"></p>
+      </div>
 
+      <div class="karte">
         <h2>Zutaten</h2>
         <div class="spalten" aria-hidden="true"><span>Zutat</span><span>Menge</span><span>Kategorie</span><span></span></div>
         <ul class="zeilen" id="f-zutaten"></ul>
-        <button type="button" class="leise" id="f-mehr" style="padding:0">+ noch eine Zutat</button>
+        <button type="button" class="knopf text" id="f-mehr">＋ Zutat hinzufügen</button>
+      </div>
 
+      <div class="karte">
         <h2>Zubereitung</h2>
-        <ul class="f-schritte" id="f-schritte"></ul>
-        <button type="button" class="leise" id="f-schritt" style="padding:0">+ weiteren Schritt</button>
+        <ol class="f-schritte" id="f-schritte"></ol>
+        <button type="button" class="knopf text" id="f-schritt">＋ Weiteren Schritt hinzufügen</button>
+      </div>
 
-        <div class="knoepfe"><button class="gruen" type="submit">speichern</button></div>
-      </form>
-    </section>
+      <p class="banner nix" id="f-fehler" aria-live="polite"></p>
+      <div class="aktionen"><button class="knopf haupt breit" type="submit">Rezept speichern</button></div>
+    </form>
+  </section>
 
+  <!-- ================= Neues Rezept aus Text ================= -->
+  <section id="import" hidden>
+    <header class="leiste">
+      <a href="#" class="zurueck">Abbrechen</a>
+      <span class="leiste-titel">Neues Rezept</span>
+      <span style="width:72px"></span>
+    </header>
+    <nav class="reiter"><a href="#neu">Selbst eintippen</a><a href="#import" class="aktiv">Aus Text einfügen</a></nav>
+
+    <div class="karte">
+      <h2>Rezepttext einfügen</h2>
+      <p class="erklaerung">Kopiere einen Rezepttext – zum Beispiel die Beschreibung eines Instagram-Beitrags – und füge ihn unten ein. Name, Portionen, Zutaten mit Mengen, Zubereitungsschritte und ein Link werden automatisch erkannt. Danach kannst du alles prüfen und anpassen, bevor du speicherst.</p>
+      <textarea id="i-text" placeholder="Rezepttext hier einfügen …"></textarea>
+      <div class="aktionen stapel">
+        <button type="button" class="knopf zweit" id="i-ablage" hidden>Aus Zwischenablage einfügen</button>
+        <button type="button" class="knopf haupt" id="i-erkennen">Erkennen und übernehmen</button>
+      </div>
+      <p class="banner nix" id="i-meldung" aria-live="polite"></p>
+    </div>
+    <a href="#hilfe" class="unten-link">Rezepte aus Instagram übernehmen – so geht's ›</a>
+  </section>
+
+  <!-- ================= Anleitung Instagram ================= -->
+  <section id="hilfe" hidden>
+    <header class="leiste"><a href="#" class="zurueck">‹ Rezepte</a></header>
+    <h1>Rezepte aus Instagram</h1>
+    <p class="unter">Zwei Wege – der erste braucht keine Einrichtung.</p>
+
+    <div class="karte">
+      <h2>Ohne Einrichtung</h2>
+      <ol class="anleitung">
+        <li><span class="nr">1</span><span class="t">In Instagram die <b>Beschreibung</b> des Beitrags kopieren. Lässt sie sich nicht markieren: Bildschirmfoto machen, in der Fotos-App lange auf den Text drücken → <b>Kopieren</b>.</span></li>
+        <li><span class="nr">2</span><span class="t">Rezeptbuch über das Symbol auf dem Home-Bildschirm öffnen → <b>Aus Text einfügen</b> → <b>Aus Zwischenablage einfügen</b> → <b>Erkennen und übernehmen</b>.</span></li>
+        <li><span class="nr">3</span><span class="t">Für den Video-Link: in Instagram auf den Papierflieger → <b>Link kopieren</b>. Im Rezeptbuch lange ins Feld <b>Link zur Quelle</b> tippen → <b>Einsetzen</b>.</span></li>
+        <li><span class="nr">4</span><span class="t">Kurz prüfen, gern das Bildschirmfoto als Foto anhängen → <b>Speichern</b>.</span></li>
+      </ol>
+    </div>
+
+    <div class="karte">
+      <h2>Mit Kurzbefehl (spart Schritt 3)</h2>
+      <p class="hinweis" style="margin:0 0 12px">Der Kurzbefehl steht danach im Teilen-Menü von Instagram und kopiert Beschreibung und Link zusammen.</p>
+      <ol class="anleitung">
+        <li><span class="nr">1</span><span class="t">App <b>Kurzbefehle</b> öffnen, unten links <b>Kurzbefehle</b> wählen, oben rechts auf <b>＋</b> tippen.</span></li>
+        <li><span class="nr">2</span><span class="t">Oben auf den Namen tippen → <b>Umbenennen</b> → „Ins Rezeptbuch“.</span></li>
+        <li><span class="nr">3</span><span class="t">Unten auf <b>ⓘ</b> tippen (bei neueren iOS-Versionen: oben auf den Namen → <b>Details</b>) → <b>Im Share-Sheet anzeigen</b> einschalten.</span></li>
+        <li><span class="nr">4</span><span class="t">Ins Suchfeld unten „Zwischenablage abrufen“ eintippen und antippen.</span></li>
+        <li><span class="nr">5</span><span class="t">„Text“ suchen und antippen. Ins neue Textfeld tippen, in der Leiste über der Tastatur <b>Zwischenablage</b> wählen, zweimal Zeilenumbruch, dann <b>Kurzbefehleingabe</b> wählen.</span></li>
+        <li><span class="nr">6</span><span class="t">„In Zwischenablage kopieren“ suchen und antippen. Oben auf <b>Fertig</b>.</span></li>
+        <li><span class="nr">7</span><span class="t">Benutzen: Beschreibung kopieren → Papierflieger → in der unteren Reihe nach rechts wischen → <b>Teilen …</b> → <b>Ins Rezeptbuch</b>. Dann weiter wie oben bei Schritt 2.</span></li>
+      </ol>
+    </div>
+  </section>
+
+</div>
+
+<!-- Großansicht für Fotos -->
+<div class="lupe" id="lupe" hidden><img alt=""></div>
+
+<!-- Ja/Nein-Abfrage -->
+<div class="dialog-grund" id="dialog" hidden>
+  <div class="dialog" role="alertdialog" aria-modal="true" aria-labelledby="d-titel" aria-describedby="d-text">
+    <h3 id="d-titel"></h3>
+    <p id="d-text"></p>
+    <div class="dialog-knoepfe">
+      <button type="button" class="knopf zweit" id="d-nein">Nein</button>
+      <button type="button" class="knopf haupt" id="d-ja">Ja</button>
+    </div>
   </div>
 </div>
-<div class="lupe" id="lupe" hidden><img alt=""></div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script src="erkennen.js"></script>
 <script src="fotos.js"></script>
@@ -421,6 +477,7 @@
   const LISTE = "einkaufsliste";
   const KATEGORIEN = ["Obst & Gemüse", "Kühlregal", "Brot & Backwaren", "Vorrat", "Getränke", "Drogerie", "Sonstiges"];
   const neueId = () => Date.now() + Math.random();
+  const $ = id => document.getElementById(id);
 
   let rezepte = [];
   try {
@@ -430,8 +487,8 @@
   } catch (e) { rezepte = [beispiel()]; }
 
   function speichern() {
-    try { localStorage.setItem(REZEPTE, JSON.stringify({ rezepte })); }
-    catch (e) { alert("Das Rezept konnte nicht gespeichert werden – der Speicher ist voll."); }
+    try { localStorage.setItem(REZEPTE, JSON.stringify({ rezepte })); return true; }
+    catch (e) { toast("Speichern hat nicht geklappt – der Speicher ist voll."); return false; }
   }
 
   function beispiel() {
@@ -453,16 +510,47 @@
     };
   }
 
-  const $ = id => document.getElementById(id);
-
   // Schritte als Liste. Ältere Rezepte hatten einen Freitext – den Zeile für Zeile aufteilen.
   function schritteVon(r) {
-    if (Array.isArray(r.schritte)) return r.schritte.filter(t => t.trim());
+    if (Array.isArray(r.schritte)) return r.schritte.filter(t => String(t).trim());
     return String(r.schritte || "").split("\n")
       .map(t => t.replace(/^\s*\d+\s*[.)]\s*/, "").trim())
       .filter(Boolean);
   }
   const finde = id => rezepte.find(r => String(r.id) === String(id));
+  const mehrzahl = (n, eins, viele) => `${n} ${n === 1 ? eins : viele}`;
+
+  // ---------- Kleine Helfer: Rückmeldung und Ja/Nein-Abfrage ----------
+  let toastUhr;
+  function toast(text) {
+    const t = $("toast");
+    t.textContent = text;
+    t.classList.add("da");
+    clearTimeout(toastUhr);
+    toastUhr = setTimeout(() => t.classList.remove("da"), 3500);
+  }
+
+  // frage("Titel", "Text", { ja, nein, gefahr, beiJa }) → Promise<true/false>
+  // beiJa läuft direkt beim Tippen auf "Ja" – nötig, damit das iPhone z. B. das Teilen-Menü öffnen darf.
+  function frage(titel, text, { ja = "Ja", nein = "Nein", gefahr = false, beiJa = null } = {}) {
+    return new Promise(antwort => {
+      $("d-titel").textContent = titel;
+      $("d-text").textContent = text;
+      $("d-ja").textContent = ja;
+      $("d-nein").textContent = nein;
+      $("d-ja").className = "knopf " + (gefahr ? "gefahr" : "haupt");
+      $("dialog").hidden = false;
+      $("d-ja").focus();
+      const fertig = wert => {
+        $("dialog").hidden = true;
+        $("d-ja").onclick = $("d-nein").onclick = $("dialog").onclick = null;
+        antwort(wert);
+      };
+      $("d-ja").onclick = () => { if (beiJa) beiJa(); fertig(true); };
+      $("d-nein").onclick = () => fertig(false);
+      $("dialog").onclick = e => { if (e.target === $("dialog")) fertig(false); };
+    });
+  }
 
   // ---------- Mengen umrechnen ("250 g" für 4 → "125 g" für 2) ----------
   const BRUECHE = { "½": .5, "¼": .25, "¾": .75, "⅓": 1/3, "⅔": 2/3 };
@@ -480,18 +568,23 @@
     return String(neu).replace(".", ",") + m[2];
   }
 
-  // ---------- Seiten wechseln über die Adresse (#neu, #r/123, #b/123) ----------
+  // ---------- Seiten wechseln über die Adresse ----------
+  // #  Übersicht · #r/123 Rezept · #b/123 bearbeiten · #neu eintippen · #import aus Text · #hilfe
   let aktuell = null;      // angezeigtes Rezept
   let portionen = 1;       // eingestellte Portionen in der Ansicht
   let abgewaehlt = new Set();
+  let vorher = "";         // vorherige Adresse (für den Wechsel zwischen den Reitern)
 
   function zeigen() {
     const h = location.hash;
-    ["uebersicht", "ansicht", "formular", "hilfe"].forEach(id => $(id).hidden = true);
+    ["uebersicht", "ansicht", "formular", "import", "hilfe"].forEach(id => $(id).hidden = true);
     $("meldung").textContent = "";
+    $("dialog").hidden = true;
     window.scrollTo(0, 0);
+    const kamVon = vorher; vorher = h;
 
-    if (h === "#neu") return formular(null);
+    if (h === "#neu") return formular(null, kamVon === "#import");
+    if (h === "#import") { $("import").hidden = false; document.title = "Neues Rezept aus Text"; $("i-meldung").textContent = ""; return; }
     if (h === "#hilfe") { $("hilfe").hidden = false; document.title = "Rezepte aus Instagram"; return; }
     if (h.startsWith("#b/") && finde(h.slice(3))) return formular(finde(h.slice(3)));
     if (h.startsWith("#r/") && finde(h.slice(3))) return ansicht(finde(h.slice(3)));
@@ -508,7 +601,7 @@
 
   // ---------- Suche ----------
   // Groß/klein und Akzente egal: "kase" findet "Käse". Mehrere Wörter müssen alle vorkommen.
-  const norm = t => String(t || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const norm = t => String(t || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
 
   function treffer(r, woerter) {
     const titel = norm(r.titel);
@@ -537,15 +630,14 @@
       .map(r => ({ r, t: treffer(r, woerter) }))
       .filter(x => x.t);
 
-    const gesamt = rezepte.length === 1 ? "1 Rezept" : `${rezepte.length} Rezepte`;
     $("anzahl").textContent = woerter.length
       ? `${gefunden.length} von ${rezepte.length === 1 ? "1 Rezept" : rezepte.length + " Rezepten"} gefunden`
-      : gesamt;
+      : mehrzahl(rezepte.length, "Rezept", "Rezepte");
 
-    if (!rezepte.length) { ul.innerHTML = `<li class="leer" style="margin:0">Noch keine Rezepte. Schreib dein erstes auf!</li>`; return; }
+    if (!rezepte.length) { ul.innerHTML = `<li class="leer">Noch keine Rezepte. Leg dein erstes an!</li>`; return; }
     if (!gefunden.length) {
       const li = document.createElement("li");
-      li.className = "leer"; li.style.margin = "0";
+      li.className = "leer";
       li.textContent = `Nichts gefunden für „${begriff}“.`;
       ul.appendChild(li);
       return;
@@ -554,19 +646,27 @@
       const li = document.createElement("li");
       const a = document.createElement("a");
       a.href = "#r/" + r.id;
-      a.innerHTML = `<span class="titel"></span><span class="info"></span>`;
+      a.innerHTML = `<span class="bild"></span><span class="text"><span class="titel"></span><span class="info"></span></span><span class="pfeil" aria-hidden="true">›</span>`;
       a.querySelector(".titel").textContent = r.titel;
+      // Vorschaubild – oder der Anfangsbuchstabe, wenn es kein Foto gibt
+      const platz = a.querySelector(".bild");
+      platz.textContent = r.titel.trim().charAt(0).toUpperCase();
       if (r.fotos && r.fotos.length) {
-        const mini = document.createElement("img");
-        mini.className = "mini"; mini.alt = "";
-        a.prepend(mini);
-        Fotos.url(r.fotos[0], "mini").then(u => { if (u) mini.src = u; else mini.remove(); }).catch(() => mini.remove());
+        Fotos.url(r.fotos[0], "mini").then(u => {
+          if (!u) return;
+          const img = document.createElement("img");
+          img.className = "bild"; img.alt = ""; img.src = u;
+          platz.replaceWith(img);
+        }).catch(() => {});
       }
       const info = a.querySelector(".info");
       // Bei der Suche zeigen, warum ein Rezept gefunden wurde (z. B. "mit Zucchini")
-      if (t.grund && t.grund.startsWith("in ")) info.textContent = t.grund;
+      if (t.grund && t.grund.startsWith("in ")) info.textContent = "Treffer " + t.grund;
       else if (t.grund) { info.append("mit "); const b = document.createElement("b"); b.textContent = t.grund; info.append(b); }
-      else info.textContent = `${r.zutaten.length} Zutaten`;
+      else {
+        const s = schritteVon(r).length;
+        info.textContent = mehrzahl(r.zutaten.length, "Zutat", "Zutaten") + (s ? " · " + mehrzahl(s, "Schritt", "Schritte") : "");
+      }
       li.appendChild(a);
       ul.appendChild(li);
     });
@@ -586,17 +686,17 @@
     const ol = $("a-schritte");
     ol.innerHTML = "";
     const schritte = schritteVon(r);
-    if (!schritte.length) ol.innerHTML = `<li class="leer" style="margin:0">Noch keine Schritte eingetragen.</li>`;
+    if (!schritte.length) ol.innerHTML = `<li class="hinweis" style="margin:0">Noch keine Schritte eingetragen.</li>`;
     schritte.forEach((t, i) => {
       const li = document.createElement("li");
-      li.innerHTML = `<span class="nr">${i + 1}.</span><span></span>`;
-      li.lastChild.textContent = t;
+      li.innerHTML = `<span class="nr">${i + 1}</span><span class="t"></span>`;
+      li.querySelector(".t").textContent = t;
       ol.appendChild(li);
     });
     zutatenZeichnen();
   }
 
-  // Fotos in der Ansicht – antippen vergrößert
+  // Fotos in der Ansicht – seitlich wischen, antippen vergrößert
   function fotosZeigen(r) {
     const box = $("a-fotos");
     box.innerHTML = "";
@@ -614,7 +714,11 @@
     });
   }
   $("lupe").addEventListener("click", () => $("lupe").hidden = true);
-  document.addEventListener("keydown", e => { if (e.key === "Escape") $("lupe").hidden = true; });
+  document.addEventListener("keydown", e => {
+    if (e.key !== "Escape") return;
+    $("lupe").hidden = true;
+    if (!$("dialog").hidden) $("d-nein").click();
+  });
 
   // Link zur Quelle: bei Videos "▶ Video ansehen", sonst die Seite
   function quelleZeigen(url) {
@@ -649,12 +753,12 @@
     const liste = listeLesen();
     const ul = $("a-zutaten");
     ul.innerHTML = "";
-    if (!r.zutaten.length) ul.innerHTML = `<li class="leer" style="margin:0">Keine Zutaten eingetragen.</li>`;
+    if (!r.zutaten.length) ul.innerHTML = `<li class="hinweis" style="margin:0">Keine Zutaten eingetragen.</li>`;
     r.zutaten.forEach((z, i) => {
       const li = document.createElement("li");
       const drauf = stehtDrauf(liste, z.name);
       if (abgewaehlt.has(i) || drauf) li.classList.add("weg");
-      li.innerHTML = `<label><input type="checkbox"><span class="name"></span><span class="menge"></span></label>`;
+      li.innerHTML = `<label><input type="checkbox" class="haken"><span class="name"></span><span class="menge"></span></label>`;
       const box = li.querySelector("input");
       box.checked = !abgewaehlt.has(i) && !drauf;
       box.disabled = drauf;
@@ -672,12 +776,14 @@
       }
       ul.appendChild(li);
     });
+    $("a-hinweis").hidden = !r.zutaten.length;
     knopfPruefen();
   }
   function knopfPruefen() {
     const n = $("a-zutaten").querySelectorAll("input:checked").length;
     $("auf-liste").disabled = !n;
-    $("auf-liste").style.opacity = n ? 1 : .4;
+    $("auf-liste").textContent = n ? `${mehrzahl(n, "Zutat", "Zutaten")} auf die Einkaufsliste` : "Alles schon da";
+    $("auf-liste").hidden = !aktuell.zutaten.length;
   }
 
   $("weniger").addEventListener("click", () => { if (portionen > 1) { portionen--; zutatenZeichnen(); } });
@@ -694,33 +800,39 @@
       dazu++;
     });
     try { localStorage.setItem(LISTE, JSON.stringify(liste)); } catch (e) {}
-    $("meldung").innerHTML = "";
-    $("meldung").append(dazu === 1 ? "1 Zutat steht jetzt auf der " : `${dazu} Zutaten stehen jetzt auf der `);
-    const link = document.createElement("a");
-    link.href = "../"; link.textContent = "Einkaufsliste";
-    $("meldung").append(link, " ✓");
     zutatenZeichnen();
+    $("meldung").innerHTML = "";
+    $("meldung").append(`✓ ${mehrzahl(dazu, "Zutat steht", "Zutaten stehen")} jetzt auf der Einkaufsliste. `);
+    const link = document.createElement("a");
+    link.href = "../"; link.textContent = "Zur Einkaufsliste ›";
+    $("meldung").append(link);
   });
 
   $("bearbeiten").addEventListener("click", () => location.hash = "#b/" + aktuell.id);
-  $("loeschen").addEventListener("click", () => {
-    if (!confirm(`„${aktuell.titel}“ wirklich löschen?`)) return;
-    rezepte = rezepte.filter(r => r !== aktuell);
+  $("loeschen").addEventListener("click", async () => {
+    const r = aktuell;
+    const fotos = (r.fotos || []).length;
+    const ok = await frage("Rezept löschen?",
+      `„${r.titel}“${fotos ? " und " + mehrzahl(fotos, "Foto", "Fotos") : ""} werden gelöscht. Das lässt sich nicht rückgängig machen.`,
+      { gefahr: true });
+    if (!ok) return;
+    rezepte = rezepte.filter(x => x !== r);
     speichern();
-    Fotos.loeschen(aktuell.fotos).catch(() => {});
+    Fotos.loeschen(r.fotos).catch(() => {});
     location.hash = "";
+    toast(`„${r.titel}“ gelöscht`);
   });
 
-  // ---------- Rezept schreiben / ändern ----------
+  // ---------- Rezept eintippen / ändern ----------
   let inBearbeitung = null;
-  const MUELL = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>`;
+  const MUELL = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9 7V4.5h6V7"/><path d="M18 7l-.8 12.2a2 2 0 0 1-2 1.8H8.8a2 2 0 0 1-2-1.8L6 7"/></svg>`;
 
   function zutatZeile(z = { name: "", qty: "", cat: "Sonstiges" }) {
     const li = document.createElement("li");
     li.innerHTML = `
-      <input class="z-name" placeholder="Zutat" autocomplete="off">
-      <input class="z-menge" placeholder="Menge" autocomplete="off">
-      <select class="z-kat">${KATEGORIEN.map(k => `<option></option>`).join("")}</select>
+      <input class="z-name" placeholder="Zutat" autocomplete="off" aria-label="Zutat">
+      <input class="z-menge" placeholder="Menge" autocomplete="off" aria-label="Menge">
+      <select class="z-kat" aria-label="Kategorie">${KATEGORIEN.map(() => `<option></option>`).join("")}</select>
       <button type="button" class="raus" title="Zutat entfernen" aria-label="Zutat entfernen">${MUELL}</button>`;
     li.querySelectorAll("option").forEach((o, i) => o.textContent = KATEGORIEN[i]);
     li.querySelector(".z-name").value = z.name;
@@ -731,27 +843,38 @@
     return li;
   }
 
-  function formular(r) {
+  // weiterfuehren = true: vom Reiter "Aus Text" zurück, Eingaben behalten
+  function formular(r, weiterfuehren = false) {
+    $("formular").hidden = false;
+    $("f-reiter").hidden = !!r;                       // Reiter nur bei neuen Rezepten
+    $("f-kopf").textContent = r ? "Rezept bearbeiten" : "Neues Rezept";
+    document.title = r ? "Rezept bearbeiten" : "Neues Rezept";
+    $("abbrechen").href = r ? "#r/" + r.id : "#";
+    $("f-fehler").textContent = "";
+
+    // Erkanntes Rezept aus dem Reiter "Aus Text"?
+    if (!r && vorlage) {
+      if (!formularOffen || inBearbeitung) formularLeeren(null);
+      vorlageUebernehmen();
+      return;
+    }
+    if (!r && weiterfuehren && inBearbeitung === null && formularOffen) return;   // nichts verlieren
+    $("erkannt").textContent = "";
+    formularLeeren(r);
+  }
+
+  let formularOffen = false;
+  function formularLeeren(r) {
+    formularOffen = true;
     inBearbeitung = r;
-    // Fotos erst beim Speichern wirklich ändern – "abbrechen" lässt alles, wie es war
+    // Fotos erst beim Speichern wirklich ändern – "Abbrechen" lässt alles, wie es war
     fotosImFormular = (r && r.fotos || []).map(id => ({ id }));
     fotosZuLoeschen = [];
     $("f-foto-info").textContent = "";
     formularFotosZeichnen();
-    $("formular").hidden = false;
-    document.title = r ? "Rezept ändern" : "Neues Rezept";
-    $("abbrechen").href = r ? "#r/" + r.id : "#";
     $("f-titel").value = r ? r.titel : "";
     $("f-portionen").value = r ? r.portionen : 2;
     $("f-quelle").value = r && r.quelle ? r.quelle : "";
-    $("f-text").value = ""; $("erkannt").textContent = "";
-    $("einfuegen").open = !r;            // bei neuen Rezepten gleich aufgeklappt
-    // Kommt von "aus Zwischenablage" in der Übersicht?
-    if (!r && ablageText !== null) {
-      const t = ablageText; ablageText = null;
-      if (t) { $("f-text").value = t; setTimeout(erkennenUndFuellen, 0); }
-      else { $("erkannt").className = "nix"; $("erkannt").textContent = "In der Zwischenablage war kein Text – füge ihn einfach hier ins Feld ein."; }
-    }
     $("f-schritte").innerHTML = "";
     const schritte = r ? schritteVon(r) : [];
     // immer mindestens drei Schritte zum Ausfüllen
@@ -761,16 +884,17 @@
   }
 
   // ---------- Schritte im Formular ----------
-  function hoehe(t) { t.style.height = "auto"; t.style.height = t.scrollHeight + "px"; }
+  function hoehe(t) { t.style.height = "auto"; t.style.height = (t.scrollHeight + 2) + "px"; }
 
   function schrittZeile(text = "") {
-    const ul = $("f-schritte");
+    const ol = $("f-schritte");
     const li = document.createElement("li");
-    li.innerHTML = `<span class="nr">${ul.children.length + 1}.</span><textarea rows="1"></textarea>`;
+    const n = ol.children.length + 1;
+    li.innerHTML = `<span class="nr">${n}</span><textarea rows="1"></textarea>`;
     const t = li.querySelector("textarea");
     t.value = text;
-    t.placeholder = ["Erst …", "Dann …", "Zum Schluss …"][ul.children.length] || "Und dann …";
-    t.setAttribute("aria-label", `Schritt ${ul.children.length + 1}`);
+    t.placeholder = ["Was kommt zuerst?", "Und dann?", "Zum Schluss?"][n - 1] || "Nächster Schritt";
+    t.setAttribute("aria-label", `Schritt ${n}`);
     t.addEventListener("input", () => hoehe(t));
     // Enter springt zum nächsten Schritt (und legt ihn an, wenn es der letzte war)
     t.addEventListener("keydown", e => {
@@ -779,13 +903,14 @@
       const naechster = li.nextElementSibling ? li.nextElementSibling.querySelector("textarea") : schrittZeile();
       naechster.focus();
     });
-    ul.appendChild(li);
+    ol.appendChild(li);
     requestAnimationFrame(() => hoehe(t));
     return t;
   }
   $("f-schritt").addEventListener("click", () => schrittZeile().focus());
+  $("f-mehr").addEventListener("click", () => zutatZeile().querySelector(".z-name").focus());
 
-  // ---------- Text einfügen & erkennen ----------
+  // ---------- Neues Rezept aus Text ----------
   function linkSaeubern(t) {
     t = (t || "").trim();
     if (!t) return "";
@@ -802,74 +927,65 @@
   }
 
   function formularHatInhalt() {
+    if (!formularOffen || inBearbeitung) return false;
     const z = [...$("f-zutaten").querySelectorAll(".z-name")].some(i => i.value.trim());
     const s = [...$("f-schritte").querySelectorAll("textarea")].some(t => t.value.trim());
-    return z || s;
+    return z || s || !!$("f-titel").value.trim();
   }
 
-  function erkennenUndFuellen() {
-    const text = $("f-text").value;
-    const meldung = $("erkannt");
-    meldung.className = "";
-    if (!text.trim()) { meldung.textContent = ""; return; }
-    const e = Rezepterkennung.erkennen(text, gelernteKategorien());
+  let vorlage = null;     // erkanntes Rezept, das ins Formular soll
 
+  $("i-erkennen").addEventListener("click", async () => {
+    const text = $("i-text").value;
+    const meldung = $("i-meldung");
+    meldung.textContent = "";
+    if (!text.trim()) { meldung.textContent = "Füge zuerst einen Rezepttext ins Feld ein."; return; }
+    const e = Rezepterkennung.erkennen(text, gelernteKategorien());
     if (!e.zutaten.length && !e.schritte.length) {
-      meldung.className = "nix";
-      meldung.textContent = "Hier konnte ich keine Zutaten oder Schritte finden. Tipp: Überschriften wie „Zutaten“ und „Zubereitung“ helfen.";
-      if (e.quelle && !$("f-quelle").value) $("f-quelle").value = e.quelle;
+      meldung.textContent = "In diesem Text konnte ich keine Zutaten oder Schritte finden. Tipp: Überschriften wie „Zutaten“ und „Zubereitung“ helfen.";
       return;
     }
-    if (formularHatInhalt() && !confirm("Die bisherigen Zutaten und Schritte durch den erkannten Text ersetzen?")) return;
+    if (formularHatInhalt()) {
+      const ok = await frage("Eingaben ersetzen?", "Du hast unter „Selbst eintippen“ schon etwas eingetragen. Sollen Zutaten und Schritte durch den erkannten Text ersetzt werden?");
+      if (!ok) return;
+    }
+    vorlage = e;
+    location.hash = "#neu";
+  });
 
+  function vorlageUebernehmen() {
+    const e = vorlage; vorlage = null;
+    inBearbeitung = null;
     if (e.titel && !$("f-titel").value.trim()) $("f-titel").value = e.titel;
     if (e.portionen) $("f-portionen").value = e.portionen;
     if (e.quelle) $("f-quelle").value = e.quelle;
-
     $("f-zutaten").innerHTML = "";
     (e.zutaten.length ? e.zutaten : [undefined, undefined, undefined]).forEach(z => zutatZeile(z));
     $("f-schritte").innerHTML = "";
     for (let i = 0; i < Math.max(3, e.schritte.length); i++) schrittZeile(e.schritte[i] || "");
-
     const teile = [];
-    if (e.portionen) teile.push(`${e.portionen} ${e.portionen === 1 ? "Person" : "Personen"}`);
-    teile.push(`${e.zutaten.length} Zutaten`, `${e.schritte.length} Schritte`);
+    if (e.titel) teile.push("Name");
+    if (e.portionen) teile.push(mehrzahl(e.portionen, "Portion", "Portionen"));
+    teile.push(mehrzahl(e.zutaten.length, "Zutat", "Zutaten"), mehrzahl(e.schritte.length, "Schritt", "Schritte"));
     if (e.quelle) teile.push("Link");
-    meldung.textContent = `Erkannt: ${teile.join(", ")} ✓ Bitte kurz prüfen, dann speichern.`;
+    $("erkannt").className = "banner";
+    $("erkannt").textContent = `Aus deinem Text erkannt: ${teile.join(", ")}. Bitte kurz prüfen und dann speichern.`;
   }
 
-  $("f-erkennen").addEventListener("click", erkennenUndFuellen);
-
-  // "aus Zwischenablage" in der Übersicht: neues Rezept öffnen und Text gleich erkennen
-  let ablageText = null;
+  // "Aus Zwischenablage einfügen" nur zeigen, wenn der Browser das kann
   if (navigator.clipboard && navigator.clipboard.readText) {
-    $("aus-ablage").hidden = false;
-    $("aus-ablage").addEventListener("click", async () => {
-      let t = "";
-      try { t = await navigator.clipboard.readText(); } catch (e) {}
-      ablageText = t && t.trim() ? t : "";
-      if (location.hash === "#neu") zeigen(); else location.hash = "#neu";
-    });
-  }
-  // Beim Einfügen gleich loslegen
-  $("f-text").addEventListener("paste", () => setTimeout(erkennenUndFuellen, 0));
-
-  // "aus Zwischenablage holen" nur zeigen, wenn der Browser das kann
-  if (navigator.clipboard && navigator.clipboard.readText) {
-    $("f-ablage").hidden = false;
-    $("f-ablage").addEventListener("click", async () => {
+    $("i-ablage").hidden = false;
+    $("i-ablage").addEventListener("click", async () => {
+      $("i-meldung").textContent = "";
       try {
         const t = await navigator.clipboard.readText();
-        if (t && t.trim()) { $("f-text").value = t; erkennenUndFuellen(); }
-        else { $("erkannt").className = "nix"; $("erkannt").textContent = "Die Zwischenablage ist leer."; }
+        if (t && t.trim()) $("i-text").value = t;
+        else $("i-meldung").textContent = "Die Zwischenablage ist leer.";
       } catch (err) {
-        $("erkannt").className = "nix";
-        $("erkannt").textContent = "Kein Zugriff auf die Zwischenablage – füge den Text einfach ins Feld ein (lange tippen → Einsetzen).";
+        $("i-meldung").textContent = "Kein Zugriff auf die Zwischenablage – tippe lange ins Feld und wähle „Einsetzen“.";
       }
     });
   }
-
-  $("f-mehr").addEventListener("click", () => zutatZeile().querySelector(".z-name").focus());
 
   // ---------- Fotos im Formular ----------
   let fotosImFormular = [];    // { id } = schon gespeichert, { fassung, url } = neu
@@ -912,10 +1028,16 @@
     info.textContent = fehler ? `${fehler === 1 ? "Ein Foto" : fehler + " Fotos"} konnte ich nicht lesen.` : "";
   });
 
+  // ---------- Speichern ----------
   $("f").addEventListener("submit", async e => {
     e.preventDefault();
     const titel = $("f-titel").value.trim();
-    if (!titel) return;
+    if (!titel) {
+      $("f-fehler").textContent = "Bitte gib dem Rezept einen Namen.";
+      $("f-titel").focus();
+      return;
+    }
+    $("f-fehler").textContent = "";
     const daten = {
       titel,
       portionen: Math.min(99, Math.max(1, parseInt($("f-portionen").value) || 1)),
@@ -931,8 +1053,8 @@
       schritte: [...$("f-schritte").querySelectorAll("textarea")].map(t => t.value.trim()).filter(Boolean)
     };
     // Neue Fotos speichern, entfernte löschen
-    const knopf = $("f").querySelector("button[type=submit]");
-    knopf.disabled = true;
+    const knoepfe = document.querySelectorAll('button[type=submit]');
+    knoepfe.forEach(k => k.disabled = true);
     try {
       const ids = [];
       for (const f of fotosImFormular) {
@@ -943,86 +1065,84 @@
       if (fotosImFormular.some(f => !f.id)) Fotos.dauerhaft();
       await Fotos.loeschen(fotosZuLoeschen);
     } catch (err) {
-      knopf.disabled = false;
-      $("f-foto-info").textContent = "Die Fotos konnten nicht gespeichert werden. Ist der Speicher voll?";
+      knoepfe.forEach(k => k.disabled = false);
+      $("f-fehler").textContent = "Die Fotos konnten nicht gespeichert werden. Ist der Speicher voll?";
       return;
     }
-    knopf.disabled = false;
+    knoepfe.forEach(k => k.disabled = false);
 
     let r = inBearbeitung;
     if (r) { Object.assign(r, daten); delete r.beispiel; aktuell = null; }   // Portionen in der Ansicht neu setzen
-    else { r = { id: neueId(), ...daten }; rezepte.push(r); }
+    else { r = { id: neueId(), ...daten }; rezepte.push(r); $("i-text").value = ""; }
     speichern();
+    formularOffen = false;
+    $("erkannt").textContent = "";
     location.hash = "#r/" + r.id;
+    toast("Rezept gespeichert");
   });
 
   // ---------- Sicherung: alle Rezepte + Fotos in eine Datei ----------
-  let fertigeSicherung = null;   // falls das Teilen-Menü einen zweiten Tipp braucht
+  async function sicherungErstellen() {
+    const fotos = {};
+    let n = 0;
+    for (const r of rezepte) for (const id of r.fotos || []) {
+      const t = await Fotos.alsText(id).catch(() => null);
+      if (t) { fotos[id] = t; n++; }
+    }
+    const daten = { app: "rezeptbuch", version: 1, erstellt: new Date().toISOString(), rezepte, fotos };
+    const tag = new Date().toISOString().slice(0, 10);
+    const datei = new File([JSON.stringify(daten)], `rezeptbuch-${tag}.json`, { type: "application/json" });
+    return { datei, fotos: n };
+  }
 
-  async function sicherungTeilen(datei) {
+  function sicherungWeitergeben(datei) {
     if (navigator.canShare && navigator.canShare({ files: [datei] })) {
-      await navigator.share({ files: [datei], title: "Rezeptbuch-Sicherung" });
+      navigator.share({ files: [datei], title: "Rezeptbuch-Sicherung" })
+        .then(() => toast("Sicherung erstellt ✓"))
+        .catch(err => toast(err && err.name === "AbortError" ? "Sicherung abgebrochen" : "Sicherung hat nicht geklappt"));
     } else {
       const a = document.createElement("a");
       a.href = URL.createObjectURL(datei);
       a.download = datei.name;
       document.body.appendChild(a); a.click(); a.remove();
       setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+      toast("Sicherung heruntergeladen ✓");
     }
   }
 
   $("sichern").addEventListener("click", async () => {
-    const info = $("sicherung-info");
-    try {
-      if (!fertigeSicherung) {
-        info.textContent = "Sicherung wird erstellt …";
-        const fotos = {};
-        let n = 0;
-        for (const r of rezepte) for (const id of r.fotos || []) {
-          const t = await Fotos.alsText(id).catch(() => null);
-          if (t) { fotos[id] = t; n++; }
-        }
-        const daten = { app: "rezeptbuch", version: 1, erstellt: new Date().toISOString(), rezepte, fotos };
-        const tag = new Date().toISOString().slice(0, 10);
-        fertigeSicherung = new File([JSON.stringify(daten)], `rezeptbuch-${tag}.json`, { type: "application/json" });
-        fertigeSicherung.beschreibung = `${rezepte.length} ${rezepte.length === 1 ? "Rezept" : "Rezepte"}, ${n} ${n === 1 ? "Foto" : "Fotos"}`;
-      }
-      await sicherungTeilen(fertigeSicherung);
-      info.textContent = `Sicherung erstellt (${fertigeSicherung.beschreibung}). Am besten „In Dateien sichern“ wählen.`;
-      fertigeSicherung = null;
-      $("sichern").textContent = "Rezeptbuch sichern";
-    } catch (err) {
-      if (err && err.name === "AbortError") { info.textContent = "Sicherung abgebrochen."; fertigeSicherung = null; return; }
-      if (err && err.name === "NotAllowedError" && fertigeSicherung) {
-        // Das iPhone will das Teilen-Menü nur direkt nach einem Tipp öffnen
-        $("sichern").textContent = "Sicherung jetzt speichern";
-        info.textContent = `Fertig (${fertigeSicherung.beschreibung}) – bitte noch einmal tippen.`;
-        return;
-      }
-      fertigeSicherung = null;
-      info.textContent = "Die Sicherung hat nicht geklappt.";
-    }
+    // Datei schon vorher fertig machen – dann darf "Ja" direkt das Teilen-Menü öffnen
+    let s;
+    try { s = await sicherungErstellen(); } catch (e) { toast("Sicherung hat nicht geklappt"); return; }
+    frage("Rezeptbuch sichern?",
+      `Es wird eine Datei mit ${mehrzahl(rezepte.length, "Rezept", "Rezepten")} und ${mehrzahl(s.fotos, "Foto", "Fotos")} erstellt.\nDu kannst sie danach z. B. „In Dateien sichern“ oder verschicken.`,
+      { beiJa: () => sicherungWeitergeben(s.datei) });
+  });
+
+  $("laden-knopf").addEventListener("click", () => {
+    frage("Sicherung laden?",
+      "Du wählst gleich eine Sicherungsdatei aus. Die Rezepte daraus kommen in dein Rezeptbuch – vorher siehst du noch, was sich ändert.",
+      { beiJa: () => $("laden").click() });
   });
 
   $("laden").addEventListener("change", async () => {
     const datei = $("laden").files[0];
     $("laden").value = "";
     if (!datei) return;
-    const info = $("sicherung-info");
     let daten;
     try { daten = JSON.parse(await datei.text()); } catch (e) { daten = null; }
     if (!daten || daten.app !== "rezeptbuch" || !Array.isArray(daten.rezepte)) {
-      info.textContent = "Das ist keine Rezeptbuch-Sicherung.";
+      toast("Das ist keine Rezeptbuch-Sicherung");
       return;
     }
     const neu = daten.rezepte.filter(r => !finde(r.id)).length;
     const gleich = daten.rezepte.length - neu;
     const vom = daten.erstellt ? " vom " + new Date(daten.erstellt).toLocaleDateString("de-DE") : "";
-    let frage = `Sicherung${vom} laden?\n\n${neu} ${neu === 1 ? "Rezept kommt" : "Rezepte kommen"} neu dazu.`;
-    if (gleich) frage += `\n${gleich} ${gleich === 1 ? "Rezept ist" : "Rezepte sind"} schon da und ${gleich === 1 ? "wird" : "werden"} durch die Fassung aus der Sicherung ersetzt.`;
-    if (!confirm(frage)) return;
+    let text = `${mehrzahl(neu, "Rezept kommt", "Rezepte kommen")} neu dazu.`;
+    if (gleich) text += `\n${mehrzahl(gleich, "Rezept ist", "Rezepte sind")} schon da und ${gleich === 1 ? "wird" : "werden"} durch die Fassung aus der Sicherung ersetzt.`;
+    if (!await frage(`Sicherung${vom} übernehmen?`, text)) return;
 
-    info.textContent = "Sicherung wird geladen …";
+    toast("Sicherung wird geladen …");
     // Das unveränderte Beispielrezept nicht doppelt haben, wenn die Sicherung es auch enthält
     const titelInSicherung = new Set(daten.rezepte.map(r => String(r.titel || "").toLowerCase()));
     rezepte = rezepte.filter(r => !(r.beispiel && titelInSicherung.has(r.titel.toLowerCase())));
@@ -1051,7 +1171,7 @@
     aktuell = null;
     speichern();
     listeZeichnen();
-    info.textContent = `Geladen: ${daten.rezepte.length} ${daten.rezepte.length === 1 ? "Rezept" : "Rezepte"} ✓`;
+    toast(`${mehrzahl(daten.rezepte.length, "Rezept", "Rezepte")} geladen ✓`);
   });
 
   // Zurück aus der Einkaufsliste: anzeigen, was inzwischen schon draufsteht
