@@ -14,7 +14,8 @@ Eine interaktive Einkaufsliste im Look eines linierten Notizblocks – gebaut mi
 
 ## Rezeptbuch
 Oben rechts auf **„Rezepte →“** tippen. Das Rezeptbuch hat bewusst ein schlichtes, klares Design – der Notizblock-Look bleibt der Einkaufsliste vorbehalten.
-- Neues Rezept mit zwei Reitern: **Selbst eintippen** oder **Aus Text einfügen**
+- Neues Rezept mit zwei Reitern: **Selbst eintippen** oder **Aus Foto oder Text**
+- **Aus Bildschirmfoto lesen:** Bildschirmfoto einer Rezeptbeschreibung (z. B. Instagram) auswählen – die App liest den Text auf dem Gerät heraus (Tesseract, deutsche Sprachdaten) und füllt das Rezept aus. Instagram-Oberfläche wie Likes und Kommentare wird herausgefiltert, überlappende Bildschirmfotos werden zusammengeführt
 - Symbole oben rechts: Rezeptbuch sichern, Sicherung laden, Hilfe – jede Aktion fragt vorher mit Ja/Nein nach
 - Rezepte mit Zutaten (Menge + Kategorie) und nummerierten Zubereitungsschritten aufschreiben, ändern, löschen
 - Neue Rezepte starten mit drei Schritten, „+ weiteren Schritt“ hängt den nächsten an; leere Schritte fallen beim Speichern weg
@@ -38,12 +39,17 @@ Wichtig: Die App immer über das Symbol auf dem Home-Bildschirm öffnen. Safari 
 | --- | --- |
 | `index.html` | Die Einkaufsliste (Design und Logik) |
 | `rezepte/index.html` | Das Rezeptbuch |
+| `rezepte/bildtext.js` | Bereitet Bildschirmfotos vor und schickt sie an die Texterkennung |
+| `rezepte/ocr/` | Texterkennung: Tesseract-Engine (WebAssembly), deutsche Sprachdaten, Hintergrund-Worker `leser.js` |
 | `rezepte/fotos.js` | Speichert die Fotos in IndexedDB (größerer Speicher im Browser) |
 | `rezepte/erkennen.js` | Erkennt Zutaten und Schritte in eingefügtem Text |
 | `schrift.woff` | Die Handschrift, von beiden Seiten genutzt |
 | `manifest.webmanifest` | Name und Symbol für den Home-Bildschirm |
 | `sw.js` | Speichert die App zwischen, damit sie offline startet |
 | `icon-180.png`, `icon-512.png` | App-Symbole |
+
+## Texterkennung
+[Tesseract](https://github.com/tesseract-ocr/tesseract) über [tesseract.js-core](https://github.com/naptha/tesseract.js-core) und die Sprachdaten aus [tessdata_fast](https://github.com/tesseract-ocr/tessdata_fast), jeweils Apache License 2.0 (siehe `rezepte/ocr/LICENSE-*.txt`).
 
 ## Schrift
 Handschrift „Caveat“ von Pablo Impallari, lizenziert unter der [SIL Open Font License 1.1](https://openfontlicense.org).

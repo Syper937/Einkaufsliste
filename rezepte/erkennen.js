@@ -180,6 +180,12 @@
 
       if (modus === "schritte") {
         const nr = z.match(NUMMER);
+        // Zeile beginnt klein und ohne Nummer → gehört noch zum vorigen Schritt (umgebrochene Zeile)
+        if (!nr && /^[a-zäöüß(]/.test(z) && ergebnis.schritte.length) {
+          const i = ergebnis.schritte.length - 1;
+          ergebnis.schritte[i] = (ergebnis.schritte[i] + " " + z).replace(/\s+/g, " ").trim();
+          continue;
+        }
         const schritt = ohneSatzzeichen(nr ? nr[2] : z) + (/[.!?]$/.test(z) ? z.slice(-1) : "");
         if (schritt.length > 1) ergebnis.schritte.push(gross(schritt.replace(/^\s*[-–:]\s*/, "")));
       }
@@ -187,7 +193,37 @@
     return ergebnis;
   }
 
-  const api = { erkennen, kategorie };
+  // ---------- Text aus einem Bildschirmfoto säubern ----------
+  // Entfernt, was Instagram & Co. drumherum anzeigen (Uhrzeit, Likes, Kommentare …),
+  // und typische Lesefehler bei Aufzählungszeichen und Emojis.
+  const OBERFLAECHE = new RegExp([
+    "^\\d{1,2}[:.]\\d{2}\\b.{0,12}$",                          // Uhrzeit oben
+    "^(reels|beiträge|beitrag|folgen|gefolgt|nachricht|gesponsert|bearbeitet|original-?audio.*|mehr|weniger|antworten|teilen|senden)$",
+    "^gef[äa]llt\\b.*",                                            // Gefällt 1.234 Mal
+    "^[\\d.,]+\\s*(mal|likes?|kommentare?|aufrufe|views)\\b.*",
+    "^alle\\s+[\\d.,]+\\s+kommentare.*",
+    "^.{0,4}kommentar(e)? (ansehen|hinzuf[üu]gen).*",
+    "^vor\\s+\\d+\\s+(sekunden|minuten|stunden|tagen|wochen|monaten|jahren)\\b.*",
+    "^\\d+\\s*(std|min|tg|t|w|wo)\\.?$",
+    "^[\\d. ]*(übersetzung|uebersetzung) anzeigen.*",
+    "^gefällt .* und weiteren personen.*"
+  ].join("|"), "i");
+
+  function bildschirmText(text) {
+    let zeilen = String(text || "").split(/\r?\n/).map(z => z
+      .replace(/^[\s«»°•·*+~=\-–—>|©®@&%$"'„“”‚‘’^]+(?=\S)/, "")      // gelesene Aufzählungszeichen
+      .replace(/^[^\s\d½¼¾⅓⅔]{1}\s+(?=\d)/, "")                     // einzelnes Störzeichen vor einer Zahl
+      .replace(/(\d)\s*gq\b/g, "$1 g")                               // häufiger Lesefehler "50 gq"
+      .replace(/\s+(…|\.\.\.)\s*mehr$/i, "")                       // "… mehr" am Ende
+      .trim());
+    zeilen = zeilen.filter(z => z.length > 1 && /[\p{L}\d]/u.test(z) && !OBERFLAECHE.test(z));
+    // Benutzername vor der Beschreibung ("kochliebe_ Cremige Pasta …") entfernen
+    const i = zeilen.findIndex(z => /^[a-z0-9._]{3,30}\s+\S/.test(z) && /[._\d]/.test(z.split(" ")[0]));
+    if (i !== -1 && i < 4) zeilen[i] = zeilen[i].replace(/^\S+\s+/, "");
+    return zeilen.join("\n");
+  }
+
+  const api = { erkennen, kategorie, bildschirmText };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else global.Rezepterkennung = api;
 })(this);

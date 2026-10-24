@@ -244,6 +244,14 @@
   .erklaerung { color: var(--text2); font-size: 15px; margin: 0 0 12px; }
   #i-text { height: 260px; padding: 12px; line-height: 1.45; resize: vertical; display: block; }
 
+  .option { display: flex; align-items: center; gap: 10px; margin-top: 12px; font-size: 15px; cursor: pointer; }
+  .status { margin: 12px 0 0; font-size: 15px; color: var(--text2); display: flex; align-items: center; gap: 10px; }
+  .status:empty { display: none; }
+  .status::before { content: ""; width: 16px; height: 16px; flex: none; border-radius: 50%; border: 2px solid var(--linie); border-top-color: var(--gruen); animation: dreh .8s linear infinite; }
+  @keyframes dreh { to { transform: rotate(360deg); } }
+  .oder { display: flex; align-items: center; gap: 10px; color: var(--text2); font-size: 14px; margin: 16px 0 12px; }
+  .oder::before, .oder::after { content: ""; flex: 1; height: 1px; background: var(--linie); }
+
   /* ---------- Anleitung ---------- */
   .anleitung li { display: flex; gap: 12px; }
   .anleitung li + li { margin-top: 12px; }
@@ -301,7 +309,7 @@
 
     <div class="aktionen">
       <a class="knopf haupt" href="#neu">＋ Neues Rezept</a>
-      <a class="knopf zweit" href="#import">Aus Text einfügen</a>
+      <a class="knopf zweit" href="#import">Aus Foto oder Text</a>
     </div>
 
     <label class="suche">
@@ -359,7 +367,7 @@
       <span class="leiste-titel" id="f-kopf">Neues Rezept</span>
       <button type="submit" form="f" class="leiste-knopf">Speichern</button>
     </header>
-    <nav class="reiter" id="f-reiter"><a href="#neu" class="aktiv">Selbst eintippen</a><a href="#import">Aus Text einfügen</a></nav>
+    <nav class="reiter" id="f-reiter"><a href="#neu" class="aktiv">Selbst eintippen</a><a href="#import">Aus Foto oder Text</a></nav>
     <p class="banner" id="erkannt" aria-live="polite"></p>
 
     <form id="f" novalidate>
@@ -403,11 +411,21 @@
       <span class="leiste-titel">Neues Rezept</span>
       <span style="width:72px"></span>
     </header>
-    <nav class="reiter"><a href="#neu">Selbst eintippen</a><a href="#import" class="aktiv">Aus Text einfügen</a></nav>
+    <nav class="reiter"><a href="#neu">Selbst eintippen</a><a href="#import" class="aktiv">Aus Foto oder Text</a></nav>
+
+    <div class="karte">
+      <h2>Aus Bildschirmfoto lesen</h2>
+      <p class="erklaerung">Mach ein Bildschirmfoto von der Rezeptbeschreibung – bei Instagram vorher auf „mehr“ tippen, damit der ganze Text zu sehen ist. Bei langen Texten gehen auch mehrere Bilder. Die App liest den Text heraus; die Bilder bleiben auf deinem Handy.</p>
+      <label class="knopf haupt breit" id="i-bild-knopf">Bildschirmfoto auswählen<input type="file" id="i-bild" class="unsichtbar" accept="image/*" multiple></label>
+      <label class="option"><input type="checkbox" class="haken" id="i-als-foto"> Erstes Bild auch als Rezeptfoto übernehmen</label>
+      <p class="status" id="i-status" aria-live="polite"></p>
+    </div>
+
+    <div class="oder">oder</div>
 
     <div class="karte">
       <h2>Rezepttext einfügen</h2>
-      <p class="erklaerung">Kopiere einen Rezepttext – zum Beispiel die Beschreibung eines Instagram-Beitrags – und füge ihn unten ein. Name, Portionen, Zutaten mit Mengen, Zubereitungsschritte und ein Link werden automatisch erkannt. Danach kannst du alles prüfen und anpassen, bevor du speicherst.</p>
+      <p class="erklaerung">Kopiere einen Rezepttext – zum Beispiel von einer Webseite – und füge ihn unten ein. Name, Portionen, Zutaten mit Mengen, Zubereitungsschritte und ein Link werden automatisch erkannt. Danach kannst du alles prüfen und anpassen, bevor du speicherst.</p>
       <textarea id="i-text" placeholder="Rezepttext hier einfügen …"></textarea>
       <div class="aktionen stapel">
         <button type="button" class="knopf zweit" id="i-ablage" hidden>Aus Zwischenablage einfügen</button>
@@ -422,29 +440,25 @@
   <section id="hilfe" hidden>
     <header class="leiste"><a href="#" class="zurueck">‹ Rezepte</a></header>
     <h1>Rezepte aus Instagram</h1>
-    <p class="unter">Zwei Wege – der erste braucht keine Einrichtung.</p>
+    <p class="unter">Ohne Kopieren und ohne Einrichtung – über ein Bildschirmfoto.</p>
 
     <div class="karte">
-      <h2>Ohne Einrichtung</h2>
+      <h2>So geht's</h2>
       <ol class="anleitung">
-        <li><span class="nr">1</span><span class="t">In Instagram die <b>Beschreibung</b> des Beitrags kopieren. Lässt sie sich nicht markieren: Bildschirmfoto machen, in der Fotos-App lange auf den Text drücken → <b>Kopieren</b>.</span></li>
-        <li><span class="nr">2</span><span class="t">Rezeptbuch über das Symbol auf dem Home-Bildschirm öffnen → <b>Aus Text einfügen</b> → <b>Aus Zwischenablage einfügen</b> → <b>Erkennen und übernehmen</b>.</span></li>
-        <li><span class="nr">3</span><span class="t">Für den Video-Link: in Instagram auf den Papierflieger → <b>Link kopieren</b>. Im Rezeptbuch lange ins Feld <b>Link zur Quelle</b> tippen → <b>Einsetzen</b>.</span></li>
-        <li><span class="nr">4</span><span class="t">Kurz prüfen, gern das Bildschirmfoto als Foto anhängen → <b>Speichern</b>.</span></li>
+        <li><span class="nr">1</span><span class="t">Beim Beitrag unter dem Video auf <b>mehr</b> tippen, damit die ganze Beschreibung zu sehen ist.</span></li>
+        <li><span class="nr">2</span><span class="t"><b>Bildschirmfoto</b> machen (Seitentaste + Lauter-Taste gleichzeitig). Ist der Text länger, nach unten scrollen und noch eins machen.</span></li>
+        <li><span class="nr">3</span><span class="t">Rezeptbuch über das Symbol auf dem Home-Bildschirm öffnen → <b>Aus Foto oder Text</b> → <b>Bildschirmfoto auswählen</b> → die Bilder antippen → <b>Hinzufügen</b>.</span></li>
+        <li><span class="nr">4</span><span class="t">Die App liest Zutaten und Schritte heraus. Kurz prüfen und <b>Speichern</b>.</span></li>
       </ol>
     </div>
 
     <div class="karte">
-      <h2>Mit Kurzbefehl (spart Schritt 3)</h2>
-      <p class="hinweis" style="margin:0 0 12px">Der Kurzbefehl steht danach im Teilen-Menü von Instagram und kopiert Beschreibung und Link zusammen.</p>
+      <h2>Tipps</h2>
       <ol class="anleitung">
-        <li><span class="nr">1</span><span class="t">App <b>Kurzbefehle</b> öffnen, unten links <b>Kurzbefehle</b> wählen, oben rechts auf <b>＋</b> tippen.</span></li>
-        <li><span class="nr">2</span><span class="t">Oben auf den Namen tippen → <b>Umbenennen</b> → „Ins Rezeptbuch“.</span></li>
-        <li><span class="nr">3</span><span class="t">Unten auf <b>ⓘ</b> tippen (bei neueren iOS-Versionen: oben auf den Namen → <b>Details</b>) → <b>Im Share-Sheet anzeigen</b> einschalten.</span></li>
-        <li><span class="nr">4</span><span class="t">Ins Suchfeld unten „Zwischenablage abrufen“ eintippen und antippen.</span></li>
-        <li><span class="nr">5</span><span class="t">„Text“ suchen und antippen. Ins neue Textfeld tippen, in der Leiste über der Tastatur <b>Zwischenablage</b> wählen, zweimal Zeilenumbruch, dann <b>Kurzbefehleingabe</b> wählen.</span></li>
-        <li><span class="nr">6</span><span class="t">„In Zwischenablage kopieren“ suchen und antippen. Oben auf <b>Fertig</b>.</span></li>
-        <li><span class="nr">7</span><span class="t">Benutzen: Beschreibung kopieren → Papierflieger → in der unteren Reihe nach rechts wischen → <b>Teilen …</b> → <b>Ins Rezeptbuch</b>. Dann weiter wie oben bei Schritt 2.</span></li>
+        <li><span class="nr">✓</span><span class="t"><b>Link zum Video</b> dazu: in Instagram auf den Papierflieger → <b>Link kopieren</b>, im Rezeptbuch lange ins Feld „Link zur Quelle“ tippen → <b>Einsetzen</b>.</span></li>
+        <li><span class="nr">✓</span><span class="t"><b>Schönes Rezeptfoto:</b> ein Bildschirmfoto vom Video machen und unter „Fotos“ anhängen.</span></li>
+        <li><span class="nr">✓</span><span class="t">Beim allerersten Mal lädt die Texterkennung einmalig ca. 4 MB aus dem Internet – danach geht es auch offline.</span></li>
+        <li><span class="nr">✓</span><span class="t">Die Bildschirmfotos kannst du danach in der Fotos-App wieder löschen.</span></li>
       </ol>
     </div>
   </section>
@@ -470,6 +484,7 @@
 
 <script src="erkennen.js"></script>
 <script src="fotos.js"></script>
+<script src="bildtext.js"></script>
 <script>
   // ---------- Daten ----------
   // Rezepte und Einkaufsliste liegen im selben Gerätespeicher (gleiche Internetadresse).
@@ -584,7 +599,7 @@
     const kamVon = vorher; vorher = h;
 
     if (h === "#neu") return formular(null, kamVon === "#import");
-    if (h === "#import") { $("import").hidden = false; document.title = "Neues Rezept aus Text"; $("i-meldung").textContent = ""; return; }
+    if (h === "#import") { $("import").hidden = false; document.title = "Neues Rezept aus Foto oder Text"; $("i-meldung").textContent = ""; return; }
     if (h === "#hilfe") { $("hilfe").hidden = false; document.title = "Rezepte aus Instagram"; return; }
     if (h.startsWith("#b/") && finde(h.slice(3))) return formular(finde(h.slice(3)));
     if (h.startsWith("#r/") && finde(h.slice(3))) return ansicht(finde(h.slice(3)));
@@ -935,7 +950,9 @@
 
   let vorlage = null;     // erkanntes Rezept, das ins Formular soll
 
-  $("i-erkennen").addEventListener("click", async () => {
+  $("i-erkennen").addEventListener("click", () => ausTextUebernehmen());
+
+  async function ausTextUebernehmen(fotos = []) {
     const text = $("i-text").value;
     const meldung = $("i-meldung");
     meldung.textContent = "";
@@ -946,11 +963,43 @@
       return;
     }
     if (formularHatInhalt()) {
-      const ok = await frage("Eingaben ersetzen?", "Du hast unter „Selbst eintippen“ schon etwas eingetragen. Sollen Zutaten und Schritte durch den erkannten Text ersetzt werden?");
+      const ok = await frage("Eingaben ersetzen?", "Du hast unter „Selbst eintippen“ schon etwas eingetragen. Sollen Zutaten und Schritte durch das Erkannte ersetzt werden?");
       if (!ok) return;
     }
+    e.fotos = fotos;
     vorlage = e;
     location.hash = "#neu";
+  }
+
+  // ---------- Aus Bildschirmfoto lesen ----------
+  $("i-bild").addEventListener("change", async () => {
+    const dateien = [...$("i-bild").files];
+    $("i-bild").value = "";
+    if (!dateien.length) return;
+    const status = $("i-status");
+    $("i-meldung").textContent = "";
+    $("i-bild-knopf").style.pointerEvents = "none";
+    $("i-bild-knopf").style.opacity = ".6";
+    try {
+      const text = await Bildtext.lesen(dateien, t => status.textContent = t, Rezepterkennung.bildschirmText);
+      if (!text.trim()) throw new Error("leer");
+      $("i-text").value = text;                 // bleibt sichtbar, falls man nachbessern will
+      let fotos = [];
+      if ($("i-als-foto").checked) {
+        status.textContent = "Foto wird vorbereitet …";
+        try { fotos = [await Fotos.vorbereiten(dateien[0])]; } catch (e) {}
+      }
+      status.textContent = "";
+      await ausTextUebernehmen(fotos);
+    } catch (err) {
+      status.textContent = "";
+      $("i-meldung").textContent = err.message === "leer"
+        ? "Auf dem Bild konnte ich keinen Text finden."
+        : "Die Texterkennung hat nicht geklappt. Beim ersten Mal braucht sie Internet, um sich zu laden (ca. 4 MB).";
+    } finally {
+      $("i-bild-knopf").style.pointerEvents = "";
+      $("i-bild-knopf").style.opacity = "";
+    }
   });
 
   function vorlageUebernehmen() {
@@ -959,6 +1008,8 @@
     if (e.titel && !$("f-titel").value.trim()) $("f-titel").value = e.titel;
     if (e.portionen) $("f-portionen").value = e.portionen;
     if (e.quelle) $("f-quelle").value = e.quelle;
+    (e.fotos || []).forEach(fassung => fotosImFormular.push({ fassung, url: URL.createObjectURL(fassung.mini) }));
+    formularFotosZeichnen();
     $("f-zutaten").innerHTML = "";
     (e.zutaten.length ? e.zutaten : [undefined, undefined, undefined]).forEach(z => zutatZeile(z));
     $("f-schritte").innerHTML = "";
@@ -968,6 +1019,7 @@
     if (e.portionen) teile.push(mehrzahl(e.portionen, "Portion", "Portionen"));
     teile.push(mehrzahl(e.zutaten.length, "Zutat", "Zutaten"), mehrzahl(e.schritte.length, "Schritt", "Schritte"));
     if (e.quelle) teile.push("Link");
+    if ((e.fotos || []).length) teile.push("Foto");
     $("erkannt").className = "banner";
     $("erkannt").textContent = `Aus deinem Text erkannt: ${teile.join(", ")}. Bitte kurz prüfen und dann speichern.`;
   }
