@@ -18,6 +18,7 @@ Oben rechts auf **„Rezepte →“** tippen.
 - Neue Rezepte starten mit drei Schritten, „+ weiteren Schritt“ hängt den nächsten an; leere Schritte fallen beim Speichern weg
 - Portionen mit − / + umstellen – die Mengen rechnen sich mit
 - Haken weg bei allem, was schon zu Hause ist, dann **„auf die Einkaufsliste“**: die Zutaten landen in der richtigen Kategorie; was schon offen auf der Liste steht, kommt nicht doppelt dazu
+- Suchfeld über den Rezepten findet Titel, Zutaten und Zubereitung („kase“ findet auch „Käse“)
 - Beide Teile teilen sich den Speicher im Browser – kein Server, kein Konto
 
 ## Auf dem iPhone als App

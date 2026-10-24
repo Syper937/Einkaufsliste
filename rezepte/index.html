@@ -129,6 +129,14 @@
   .rezeptliste .titel::before { content: "• "; color: var(--rot); }
   .rezeptliste .info { color: var(--tinte-hell); font-size: 20px; white-space: nowrap; }
   .leer { color: var(--grau); margin-top: var(--zeile); }
+  .rezeptliste .info b { color: var(--tinte); font-weight: 400; }
+
+  /* Suchfeld */
+  .suche { display: flex; align-items: center; gap: 6px; margin-top: var(--zeile); height: var(--zeile); }
+  .suche svg { width: 20px; height: 20px; flex: none; color: var(--tinte-hell); }
+  .suche input { flex: 1; min-width: 0; -webkit-appearance: none; appearance: none; }
+  .suche input::-webkit-search-cancel-button { display: none; }
+  .suche button { color: var(--tinte-hell); font-size: 22px; padding: 0 6px; }
 
   /* ---------- Ein Rezept ---------- */
   .portionen { display: flex; align-items: center; gap: 8px; font-size: 22px; height: var(--zeile); }
@@ -220,7 +228,12 @@
       <h1>Rezepte</h1>
       <p class="klein" id="anzahl"></p>
       <div class="knoepfe" style="margin-top:0"><a class="gruen" href="#neu" style="display:inline-flex;align-items:center;text-decoration:none">neues Rezept</a></div>
-      <ul class="rezeptliste" id="rezeptliste"></ul>
+      <label class="suche">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+        <input id="suche" type="search" placeholder="Rezept oder Zutat suchen …" autocomplete="off" enterkeyhint="search">
+        <button type="button" id="suche-weg" aria-label="Suche leeren" hidden>✕</button>
+      </label>
+      <ul class="rezeptliste" id="rezeptliste" style="margin-top:0"></ul>
     </section>
 
     <!-- Ansicht 2: Ein Rezept -->
@@ -360,21 +373,71 @@
   function uebersicht() {
     $("uebersicht").hidden = false;
     document.title = "Rezeptbuch";
-    $("anzahl").textContent = rezepte.length === 1 ? "1 Rezept" : `${rezepte.length} Rezepte`;
+    listeZeichnen();
+  }
+
+  // ---------- Suche ----------
+  // Groß/klein und Akzente egal: "kase" findet "Käse". Mehrere Wörter müssen alle vorkommen.
+  const norm = t => String(t || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+  function treffer(r, woerter) {
+    const titel = norm(r.titel);
+    const zutaten = r.zutaten.map(z => z.name);
+    const rest = norm(schritteVon(r).join(" ") + " " + (r.quelle || ""));
+    let grund = null;
+    for (const w of woerter) {
+      if (titel.includes(w)) continue;
+      const z = zutaten.find(n => norm(n).includes(w));
+      if (z) { grund = grund || z; continue; }
+      if (rest.includes(w)) { grund = grund || "in der Zubereitung"; continue; }
+      return null;                       // ein Wort kommt nirgends vor
+    }
+    return { grund };
+  }
+
+  function listeZeichnen() {
     const ul = $("rezeptliste");
+    const begriff = $("suche").value.trim();
+    const woerter = norm(begriff).split(/\s+/).filter(Boolean);
+    $("suche-weg").hidden = !begriff;
     ul.innerHTML = "";
-    if (!rezepte.length) { ul.innerHTML = `<li class="leer">Noch keine Rezepte. Schreib dein erstes auf!</li>`; return; }
-    [...rezepte].sort((a, b) => a.titel.localeCompare(b.titel, "de")).forEach(r => {
+
+    const gefunden = [...rezepte]
+      .sort((a, b) => a.titel.localeCompare(b.titel, "de"))
+      .map(r => ({ r, t: treffer(r, woerter) }))
+      .filter(x => x.t);
+
+    const gesamt = rezepte.length === 1 ? "1 Rezept" : `${rezepte.length} Rezepte`;
+    $("anzahl").textContent = woerter.length
+      ? `${gefunden.length} von ${rezepte.length === 1 ? "1 Rezept" : rezepte.length + " Rezepten"} gefunden`
+      : gesamt;
+
+    if (!rezepte.length) { ul.innerHTML = `<li class="leer" style="margin:0">Noch keine Rezepte. Schreib dein erstes auf!</li>`; return; }
+    if (!gefunden.length) {
+      const li = document.createElement("li");
+      li.className = "leer"; li.style.margin = "0";
+      li.textContent = `Nichts gefunden für „${begriff}“.`;
+      ul.appendChild(li);
+      return;
+    }
+    gefunden.forEach(({ r, t }) => {
       const li = document.createElement("li");
       const a = document.createElement("a");
       a.href = "#r/" + r.id;
       a.innerHTML = `<span class="titel"></span><span class="info"></span>`;
       a.querySelector(".titel").textContent = r.titel;
-      a.querySelector(".info").textContent = `${r.zutaten.length} Zutaten`;
+      const info = a.querySelector(".info");
+      // Bei der Suche zeigen, warum ein Rezept gefunden wurde (z. B. "mit Zucchini")
+      if (t.grund && t.grund.startsWith("in ")) info.textContent = t.grund;
+      else if (t.grund) { info.append("mit "); const b = document.createElement("b"); b.textContent = t.grund; info.append(b); }
+      else info.textContent = `${r.zutaten.length} Zutaten`;
       li.appendChild(a);
       ul.appendChild(li);
     });
   }
+  $("suche").addEventListener("input", listeZeichnen);
+  $("suche").addEventListener("keydown", e => { if (e.key === "Enter") $("suche").blur(); });
+  $("suche-weg").addEventListener("click", () => { $("suche").value = ""; listeZeichnen(); $("suche").focus(); });
 
   // ---------- Ein Rezept ansehen ----------
   function ansicht(r) {
