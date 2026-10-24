@@ -22,6 +22,7 @@ Oben rechts auf **„Rezepte →“** tippen.
 - Link-Feld pro Rezept: im Rezept steht dann „▶ Video auf Instagram ansehen“
 - **Fotos** pro Rezept (Kamera oder Mediathek, mehrere möglich): werden verkleinert gespeichert, antippen vergrößert, in der Liste als Vorschaubild
 - **Rezeptbuch sichern / Sicherung laden:** eine Datei mit allen Rezepten und Fotos – zum Aufheben, für ein neues Handy oder für Freunde
+- **Instagram:** Knopf „aus Zwischenablage“ legt sofort ein neues Rezept aus kopiertem Text an. Anleitung für einen iPhone-Kurzbefehl, der Beschreibung und Link zusammen kopiert, steht in der App unter „So holst du Rezepte aus Instagram“
 - Suchfeld über den Rezepten findet Titel, Zutaten und Zubereitung („kase“ findet auch „Käse“)
 - Beide Teile teilen sich den Speicher im Browser – kein Server, kein Konto
 

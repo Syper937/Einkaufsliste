@@ -298,7 +298,10 @@
       <div class="kopf"><a href="../">← Einkaufsliste</a></div>
       <h1>Rezepte</h1>
       <p class="klein" id="anzahl"></p>
-      <div class="knoepfe" style="margin-top:0"><a class="gruen" href="#neu" style="display:inline-flex;align-items:center;text-decoration:none">neues Rezept</a></div>
+      <div class="knoepfe" style="margin-top:0">
+        <a class="gruen" href="#neu" style="display:inline-flex;align-items:center;text-decoration:none">neues Rezept</a>
+        <button type="button" class="leise" id="aus-ablage" hidden>aus Zwischenablage</button>
+      </div>
       <label class="suche">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
         <input id="suche" type="search" placeholder="Rezept oder Zutat suchen …" autocomplete="off" enterkeyhint="search">
@@ -311,6 +314,33 @@
         <label class="leise">Sicherung laden<input type="file" id="laden" accept=".json,application/json"></label>
       </div>
       <p class="hinweis" id="sicherung-info" aria-live="polite">Erstellt eine Datei mit allen Rezepten und Fotos – zum Aufheben oder für ein anderes Handy.</p>
+      <p style="margin:var(--zeile) 0 0"><a href="#hilfe" class="quelle">So holst du Rezepte aus Instagram →</a></p>
+    </section>
+
+    <!-- Ansicht 4: Anleitung Instagram -->
+    <section id="hilfe" hidden>
+      <div class="kopf"><a href="#">← alle Rezepte</a></div>
+      <h1>Rezepte aus Instagram</h1>
+      <p class="klein">Einmal einrichten, danach zwei Fingertipps pro Rezept.</p>
+
+      <h2>Einmalig: Kurzbefehl anlegen</h2>
+      <ul class="schritte">
+        <li><span class="nr">1.</span><span>App <b>Kurzbefehle</b> öffnen → oben rechts <b>+</b> → oben den Namen <b>„Ins Rezeptbuch“</b> eintragen.</span></li>
+        <li><span class="nr">2.</span><span>Unten auf <b>ⓘ</b> tippen → <b>„Im Share-Sheet anzeigen“</b> einschalten. Bei den Eingaben <b>URLs</b> und <b>Text</b> auswählen.</span></li>
+        <li><span class="nr">3.</span><span>Aktion <b>„Zwischenablage abrufen“</b> hinzufügen.</span></li>
+        <li><span class="nr">4.</span><span>Aktion <b>„Text“</b> hinzufügen. Hinein: die blaue Variable <b>Zwischenablage</b>, zweimal Zeilenumbruch, dann die Variable <b>Kurzbefehleingabe</b>.</span></li>
+        <li><span class="nr">5.</span><span>Aktion <b>„In Zwischenablage kopieren“</b> hinzufügen (übernimmt den Text von eben).</span></li>
+        <li><span class="nr">6.</span><span>Aktion <b>„Mitteilung anzeigen“</b> mit „Jetzt im Rezeptbuch ‚aus Zwischenablage‘ tippen“. Fertig.</span></li>
+      </ul>
+
+      <h2>Jedes Mal</h2>
+      <ul class="schritte">
+        <li><span class="nr">1.</span><span>Beim Beitrag die <b>Beschreibung kopieren</b>. Lässt sie sich nicht markieren: Bildschirmfoto machen, im Foto lange auf den Text drücken → <b>Kopieren</b>.</span></li>
+        <li><span class="nr">2.</span><span>Im Beitrag auf <b>Teilen</b> (Papierflieger) → <b>Teilen …</b> bzw. <b>Mehr</b> → <b>„Ins Rezeptbuch“</b>.</span></li>
+        <li><span class="nr">3.</span><span>Rezeptbuch über das <b>Home-Bildschirm-Symbol</b> öffnen → <b>„aus Zwischenablage“</b> → <b>Einsetzen</b> bestätigen.</span></li>
+        <li><span class="nr">4.</span><span>Zutaten und Schritte kurz prüfen, gern noch das Bildschirmfoto als Foto anhängen → <b>speichern</b>.</span></li>
+      </ul>
+      <p class="hinweis" style="margin-top:var(--zeile)">Ohne Kurzbefehl geht es auch: Beschreibung kopieren, „aus Zwischenablage“ tippen und den Link danach ins Feld „Link“ einfügen.</p>
     </section>
 
     <!-- Ansicht 2: Ein Rezept -->
@@ -457,11 +487,12 @@
 
   function zeigen() {
     const h = location.hash;
-    ["uebersicht", "ansicht", "formular"].forEach(id => $(id).hidden = true);
+    ["uebersicht", "ansicht", "formular", "hilfe"].forEach(id => $(id).hidden = true);
     $("meldung").textContent = "";
     window.scrollTo(0, 0);
 
     if (h === "#neu") return formular(null);
+    if (h === "#hilfe") { $("hilfe").hidden = false; document.title = "Rezepte aus Instagram"; return; }
     if (h.startsWith("#b/") && finde(h.slice(3))) return formular(finde(h.slice(3)));
     if (h.startsWith("#r/") && finde(h.slice(3))) return ansicht(finde(h.slice(3)));
     uebersicht();
@@ -715,6 +746,12 @@
     $("f-quelle").value = r && r.quelle ? r.quelle : "";
     $("f-text").value = ""; $("erkannt").textContent = "";
     $("einfuegen").open = !r;            // bei neuen Rezepten gleich aufgeklappt
+    // Kommt von "aus Zwischenablage" in der Übersicht?
+    if (!r && ablageText !== null) {
+      const t = ablageText; ablageText = null;
+      if (t) { $("f-text").value = t; setTimeout(erkennenUndFuellen, 0); }
+      else { $("erkannt").className = "nix"; $("erkannt").textContent = "In der Zwischenablage war kein Text – füge ihn einfach hier ins Feld ein."; }
+    }
     $("f-schritte").innerHTML = "";
     const schritte = r ? schritteVon(r) : [];
     // immer mindestens drei Schritte zum Ausfüllen
@@ -802,6 +839,18 @@
   }
 
   $("f-erkennen").addEventListener("click", erkennenUndFuellen);
+
+  // "aus Zwischenablage" in der Übersicht: neues Rezept öffnen und Text gleich erkennen
+  let ablageText = null;
+  if (navigator.clipboard && navigator.clipboard.readText) {
+    $("aus-ablage").hidden = false;
+    $("aus-ablage").addEventListener("click", async () => {
+      let t = "";
+      try { t = await navigator.clipboard.readText(); } catch (e) {}
+      ablageText = t && t.trim() ? t : "";
+      if (location.hash === "#neu") zeigen(); else location.hash = "#neu";
+    });
+  }
   // Beim Einfügen gleich loslegen
   $("f-text").addEventListener("paste", () => setTimeout(erkennenUndFuellen, 0));
 
