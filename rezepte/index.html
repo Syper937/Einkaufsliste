@@ -213,6 +213,53 @@
   #erkannt.nix { color: var(--rot); }
   #f-quelle { flex: 1; min-width: 0; font-size: 22px; }
 
+  /* ---------- Fotos ---------- */
+  /* In der Ansicht: wie eingeklebte Fotos, bei mehreren seitlich wischen */
+  .fotos {
+    display: flex; gap: 18px; align-items: center;
+    height: calc(var(--zeile) * 7); margin: 0 -24px 0 -6px; padding: 0 24px 0 6px;
+    overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none;
+  }
+  .fotos::-webkit-scrollbar { display: none; }
+  .fotos img {
+    height: calc(var(--zeile) * 6 - 8px); max-width: 88%; flex: none;
+    object-fit: cover; scroll-snap-align: center;
+    background: #fff; padding: 6px; border-radius: 2px;
+    box-shadow: 0 1px 2px rgba(0,0,0,.2), 0 6px 14px rgba(0,0,0,.15);
+    transform: rotate(-1.5deg); cursor: zoom-in;
+  }
+  .fotos img:nth-child(even) { transform: rotate(1.2deg); }
+  .fotos img:only-child { max-width: 100%; }
+  /* Großansicht beim Antippen */
+  .lupe {
+    position: fixed; inset: 0; z-index: 10; background: rgba(20,20,20,.92);
+    display: flex; align-items: center; justify-content: center; padding: 16px; cursor: zoom-out;
+  }
+  .lupe img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 2px; }
+
+  /* In der Liste: kleines Vorschaubild statt Punkt */
+  .rezeptliste .mini { width: 30px; height: 30px; flex: none; align-self: center; object-fit: cover; border-radius: 4px; background: #eee; }
+  .rezeptliste .mini + .titel::before { content: none; }
+
+  /* Im Formular */
+  .f-fotos { display: flex; flex-wrap: wrap; gap: 12px; padding-top: 6px; }
+  .f-fotos:empty { display: none; }
+  .vorschau { position: relative; width: 84px; height: 84px; }
+  .vorschau img { width: 100%; height: 100%; object-fit: cover; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,.25); }
+  .vorschau button {
+    position: absolute; top: -8px; right: -8px; width: 26px; height: 26px; padding: 0;
+    border-radius: 50%; background: var(--rot); color: #fff; font-size: 16px; line-height: 26px;
+    font-family: system-ui, sans-serif;
+  }
+  .foto-knopf { color: var(--tinte-hell); font-size: 22px; cursor: pointer; display: inline-block; height: var(--zeile); }
+  .foto-knopf input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+  #f-foto-info:empty { display: none; }
+
+  /* Sicherung */
+  .sicherung { margin-top: calc(var(--zeile) * 2); }
+  .sicherung label { cursor: pointer; }
+  .sicherung input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+
   /* Link zur Quelle in der Ansicht */
   .quelle { display: inline-block; color: var(--rot); font-size: 22px; font-weight: 700; text-decoration: none; height: var(--zeile); max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 
@@ -258,6 +305,12 @@
         <button type="button" id="suche-weg" aria-label="Suche leeren" hidden>✕</button>
       </label>
       <ul class="rezeptliste" id="rezeptliste" style="margin-top:0"></ul>
+
+      <div class="knoepfe sicherung">
+        <button type="button" class="leise" id="sichern" style="padding:0">Rezeptbuch sichern</button>
+        <label class="leise">Sicherung laden<input type="file" id="laden" accept=".json,application/json"></label>
+      </div>
+      <p class="hinweis" id="sicherung-info" aria-live="polite">Erstellt eine Datei mit allen Rezepten und Fotos – zum Aufheben oder für ein anderes Handy.</p>
     </section>
 
     <!-- Ansicht 2: Ein Rezept -->
@@ -265,6 +318,7 @@
       <div class="kopf"><a href="#">← alle Rezepte</a><a href="../">Einkaufsliste →</a></div>
       <h1 id="a-titel"></h1>
       <a class="quelle" id="a-quelle" target="_blank" rel="noopener" hidden></a>
+      <div class="fotos" id="a-fotos" hidden></div>
       <div class="portionen">
         für
         <button type="button" id="weniger" aria-label="Weniger Portionen">−</button>
@@ -307,6 +361,9 @@
         <input id="f-titel" placeholder="Name des Rezepts" autocomplete="off" required>
         <label class="feld"><span>für</span><input id="f-portionen" type="number" min="1" max="99" value="2" inputmode="numeric"><span>Personen</span></label>
         <label class="feld"><span>Link</span><input id="f-quelle" type="url" inputmode="url" placeholder="z. B. Instagram-Beitrag" autocomplete="off"></label>
+        <div class="f-fotos" id="f-fotos"></div>
+        <label class="foto-knopf">+ Foto hinzufügen<input type="file" id="f-foto" accept="image/*" multiple></label>
+        <p class="hinweis" id="f-foto-info" aria-live="polite"></p>
 
         <h2>Zutaten</h2>
         <div class="spalten" aria-hidden="true"><span>Zutat</span><span>Menge</span><span>Kategorie</span><span></span></div>
@@ -323,8 +380,10 @@
 
   </div>
 </div>
+<div class="lupe" id="lupe" hidden><img alt=""></div>
 
 <script src="erkennen.js"></script>
+<script src="fotos.js"></script>
 <script>
   // ---------- Daten ----------
   // Rezepte und Einkaufsliste liegen im selben Gerätespeicher (gleiche Internetadresse).
@@ -341,12 +400,13 @@
   } catch (e) { rezepte = [beispiel()]; }
 
   function speichern() {
-    try { localStorage.setItem(REZEPTE, JSON.stringify({ rezepte })); } catch (e) {}
+    try { localStorage.setItem(REZEPTE, JSON.stringify({ rezepte })); }
+    catch (e) { alert("Das Rezept konnte nicht gespeichert werden – der Speicher ist voll."); }
   }
 
   function beispiel() {
     return {
-      id: neueId(), titel: "Pfannkuchen", portionen: 4,
+      id: neueId(), titel: "Pfannkuchen", portionen: 4, beispiel: true,
       zutaten: [
         { name: "Mehl", qty: "250 g", cat: "Vorrat" },
         { name: "Milch", qty: "500 ml", cat: "Kühlregal" },
@@ -465,6 +525,12 @@
       a.href = "#r/" + r.id;
       a.innerHTML = `<span class="titel"></span><span class="info"></span>`;
       a.querySelector(".titel").textContent = r.titel;
+      if (r.fotos && r.fotos.length) {
+        const mini = document.createElement("img");
+        mini.className = "mini"; mini.alt = "";
+        a.prepend(mini);
+        Fotos.url(r.fotos[0], "mini").then(u => { if (u) mini.src = u; else mini.remove(); }).catch(() => mini.remove());
+      }
       const info = a.querySelector(".info");
       // Bei der Suche zeigen, warum ein Rezept gefunden wurde (z. B. "mit Zucchini")
       if (t.grund && t.grund.startsWith("in ")) info.textContent = t.grund;
@@ -485,6 +551,7 @@
     document.title = r.titel;
     $("a-titel").textContent = r.titel;
     quelleZeigen(r.quelle);
+    fotosZeigen(r);
     const ol = $("a-schritte");
     ol.innerHTML = "";
     const schritte = schritteVon(r);
@@ -497,6 +564,26 @@
     });
     zutatenZeichnen();
   }
+
+  // Fotos in der Ansicht – antippen vergrößert
+  function fotosZeigen(r) {
+    const box = $("a-fotos");
+    box.innerHTML = "";
+    const ids = r.fotos || [];
+    box.hidden = !ids.length;
+    ids.forEach(id => {
+      const img = document.createElement("img");
+      img.alt = r.titel;
+      box.appendChild(img);
+      Fotos.url(id, "gross").then(u => { if (u) img.src = u; else img.remove(); }).catch(() => img.remove());
+      img.addEventListener("click", () => {
+        $("lupe").querySelector("img").src = img.src;
+        $("lupe").hidden = false;
+      });
+    });
+  }
+  $("lupe").addEventListener("click", () => $("lupe").hidden = true);
+  document.addEventListener("keydown", e => { if (e.key === "Escape") $("lupe").hidden = true; });
 
   // Link zur Quelle: bei Videos "▶ Video ansehen", sonst die Seite
   function quelleZeigen(url) {
@@ -589,6 +676,7 @@
     if (!confirm(`„${aktuell.titel}“ wirklich löschen?`)) return;
     rezepte = rezepte.filter(r => r !== aktuell);
     speichern();
+    Fotos.loeschen(aktuell.fotos).catch(() => {});
     location.hash = "";
   });
 
@@ -614,6 +702,11 @@
 
   function formular(r) {
     inBearbeitung = r;
+    // Fotos erst beim Speichern wirklich ändern – "abbrechen" lässt alles, wie es war
+    fotosImFormular = (r && r.fotos || []).map(id => ({ id }));
+    fotosZuLoeschen = [];
+    $("f-foto-info").textContent = "";
+    formularFotosZeichnen();
     $("formular").hidden = false;
     document.title = r ? "Rezept ändern" : "Neues Rezept";
     $("abbrechen").href = r ? "#r/" + r.id : "#";
@@ -729,7 +822,48 @@
 
   $("f-mehr").addEventListener("click", () => zutatZeile().querySelector(".z-name").focus());
 
-  $("f").addEventListener("submit", e => {
+  // ---------- Fotos im Formular ----------
+  let fotosImFormular = [];    // { id } = schon gespeichert, { fassung, url } = neu
+  let fotosZuLoeschen = [];
+
+  function formularFotosZeichnen() {
+    const box = $("f-fotos");
+    box.innerHTML = "";
+    fotosImFormular.forEach((f, i) => {
+      const d = document.createElement("div");
+      d.className = "vorschau";
+      d.innerHTML = `<img alt=""><button type="button" aria-label="Foto entfernen" title="Foto entfernen">✕</button>`;
+      const img = d.querySelector("img");
+      if (f.url) img.src = f.url;
+      else Fotos.url(f.id, "mini").then(u => { if (u) img.src = u; });
+      d.querySelector("button").addEventListener("click", () => {
+        if (f.id) fotosZuLoeschen.push(f.id);
+        if (f.url) URL.revokeObjectURL(f.url);
+        fotosImFormular.splice(i, 1);
+        formularFotosZeichnen();
+      });
+      box.appendChild(d);
+    });
+  }
+
+  $("f-foto").addEventListener("change", async () => {
+    const dateien = [...$("f-foto").files];
+    $("f-foto").value = "";
+    if (!dateien.length) return;
+    const info = $("f-foto-info");
+    info.textContent = dateien.length === 1 ? "Foto wird vorbereitet …" : `${dateien.length} Fotos werden vorbereitet …`;
+    let fehler = 0;
+    for (const datei of dateien) {
+      try {
+        const fassung = await Fotos.vorbereiten(datei);
+        fotosImFormular.push({ fassung, url: URL.createObjectURL(fassung.mini) });
+        formularFotosZeichnen();
+      } catch (e) { fehler++; }
+    }
+    info.textContent = fehler ? `${fehler === 1 ? "Ein Foto" : fehler + " Fotos"} konnte ich nicht lesen.` : "";
+  });
+
+  $("f").addEventListener("submit", async e => {
     e.preventDefault();
     const titel = $("f-titel").value.trim();
     if (!titel) return;
@@ -747,11 +881,128 @@
       // leere Schritte fallen weg, der Rest wird neu durchnummeriert
       schritte: [...$("f-schritte").querySelectorAll("textarea")].map(t => t.value.trim()).filter(Boolean)
     };
+    // Neue Fotos speichern, entfernte löschen
+    const knopf = $("f").querySelector("button[type=submit]");
+    knopf.disabled = true;
+    try {
+      const ids = [];
+      for (const f of fotosImFormular) {
+        if (f.id) ids.push(f.id);
+        else { ids.push(await Fotos.speichern(f.fassung)); URL.revokeObjectURL(f.url); }
+      }
+      daten.fotos = ids;
+      if (fotosImFormular.some(f => !f.id)) Fotos.dauerhaft();
+      await Fotos.loeschen(fotosZuLoeschen);
+    } catch (err) {
+      knopf.disabled = false;
+      $("f-foto-info").textContent = "Die Fotos konnten nicht gespeichert werden. Ist der Speicher voll?";
+      return;
+    }
+    knopf.disabled = false;
+
     let r = inBearbeitung;
-    if (r) { Object.assign(r, daten); aktuell = null; }   // Portionen in der Ansicht neu setzen
+    if (r) { Object.assign(r, daten); delete r.beispiel; aktuell = null; }   // Portionen in der Ansicht neu setzen
     else { r = { id: neueId(), ...daten }; rezepte.push(r); }
     speichern();
     location.hash = "#r/" + r.id;
+  });
+
+  // ---------- Sicherung: alle Rezepte + Fotos in eine Datei ----------
+  let fertigeSicherung = null;   // falls das Teilen-Menü einen zweiten Tipp braucht
+
+  async function sicherungTeilen(datei) {
+    if (navigator.canShare && navigator.canShare({ files: [datei] })) {
+      await navigator.share({ files: [datei], title: "Rezeptbuch-Sicherung" });
+    } else {
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(datei);
+      a.download = datei.name;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+    }
+  }
+
+  $("sichern").addEventListener("click", async () => {
+    const info = $("sicherung-info");
+    try {
+      if (!fertigeSicherung) {
+        info.textContent = "Sicherung wird erstellt …";
+        const fotos = {};
+        let n = 0;
+        for (const r of rezepte) for (const id of r.fotos || []) {
+          const t = await Fotos.alsText(id).catch(() => null);
+          if (t) { fotos[id] = t; n++; }
+        }
+        const daten = { app: "rezeptbuch", version: 1, erstellt: new Date().toISOString(), rezepte, fotos };
+        const tag = new Date().toISOString().slice(0, 10);
+        fertigeSicherung = new File([JSON.stringify(daten)], `rezeptbuch-${tag}.json`, { type: "application/json" });
+        fertigeSicherung.beschreibung = `${rezepte.length} ${rezepte.length === 1 ? "Rezept" : "Rezepte"}, ${n} ${n === 1 ? "Foto" : "Fotos"}`;
+      }
+      await sicherungTeilen(fertigeSicherung);
+      info.textContent = `Sicherung erstellt (${fertigeSicherung.beschreibung}). Am besten „In Dateien sichern“ wählen.`;
+      fertigeSicherung = null;
+      $("sichern").textContent = "Rezeptbuch sichern";
+    } catch (err) {
+      if (err && err.name === "AbortError") { info.textContent = "Sicherung abgebrochen."; fertigeSicherung = null; return; }
+      if (err && err.name === "NotAllowedError" && fertigeSicherung) {
+        // Das iPhone will das Teilen-Menü nur direkt nach einem Tipp öffnen
+        $("sichern").textContent = "Sicherung jetzt speichern";
+        info.textContent = `Fertig (${fertigeSicherung.beschreibung}) – bitte noch einmal tippen.`;
+        return;
+      }
+      fertigeSicherung = null;
+      info.textContent = "Die Sicherung hat nicht geklappt.";
+    }
+  });
+
+  $("laden").addEventListener("change", async () => {
+    const datei = $("laden").files[0];
+    $("laden").value = "";
+    if (!datei) return;
+    const info = $("sicherung-info");
+    let daten;
+    try { daten = JSON.parse(await datei.text()); } catch (e) { daten = null; }
+    if (!daten || daten.app !== "rezeptbuch" || !Array.isArray(daten.rezepte)) {
+      info.textContent = "Das ist keine Rezeptbuch-Sicherung.";
+      return;
+    }
+    const neu = daten.rezepte.filter(r => !finde(r.id)).length;
+    const gleich = daten.rezepte.length - neu;
+    const vom = daten.erstellt ? " vom " + new Date(daten.erstellt).toLocaleDateString("de-DE") : "";
+    let frage = `Sicherung${vom} laden?\n\n${neu} ${neu === 1 ? "Rezept kommt" : "Rezepte kommen"} neu dazu.`;
+    if (gleich) frage += `\n${gleich} ${gleich === 1 ? "Rezept ist" : "Rezepte sind"} schon da und ${gleich === 1 ? "wird" : "werden"} durch die Fassung aus der Sicherung ersetzt.`;
+    if (!confirm(frage)) return;
+
+    info.textContent = "Sicherung wird geladen …";
+    // Das unveränderte Beispielrezept nicht doppelt haben, wenn die Sicherung es auch enthält
+    const titelInSicherung = new Set(daten.rezepte.map(r => String(r.titel || "").toLowerCase()));
+    rezepte = rezepte.filter(r => !(r.beispiel && titelInSicherung.has(r.titel.toLowerCase())));
+    const fotos = daten.fotos || {};
+    for (const roh of daten.rezepte) {
+      const r = {
+        id: roh.id || neueId(),
+        titel: String(roh.titel || "Ohne Namen"),
+        portionen: Math.min(99, Math.max(1, parseInt(roh.portionen) || 2)),
+        zutaten: Array.isArray(roh.zutaten) ? roh.zutaten.map(z => ({ name: String(z.name || ""), qty: String(z.qty || ""), cat: KATEGORIEN.includes(z.cat) ? z.cat : "Sonstiges" })).filter(z => z.name) : [],
+        schritte: schritteVon(roh),
+        quelle: linkSaeubern(roh.quelle || ""),
+        fotos: []
+      };
+      for (const id of roh.fotos || []) {
+        if (!fotos[id]) continue;
+        try { await Fotos.ausText(id, fotos[id]); r.fotos.push(id); } catch (e) {}
+      }
+      const alt = finde(r.id);
+      if (alt) {
+        const weg = (alt.fotos || []).filter(id => !r.fotos.includes(id));
+        Fotos.loeschen(weg).catch(() => {});
+        rezepte[rezepte.indexOf(alt)] = r;
+      } else rezepte.push(r);
+    }
+    aktuell = null;
+    speichern();
+    listeZeichnen();
+    info.textContent = `Geladen: ${daten.rezepte.length} ${daten.rezepte.length === 1 ? "Rezept" : "Rezepte"} ✓`;
   });
 
   // Zurück aus der Einkaufsliste: anzeigen, was inzwischen schon draufsteht
