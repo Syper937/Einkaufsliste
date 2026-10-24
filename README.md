@@ -18,6 +18,8 @@ Oben rechts auf **„Rezepte →“** tippen.
 - Neue Rezepte starten mit drei Schritten, „+ weiteren Schritt“ hängt den nächsten an; leere Schritte fallen beim Speichern weg
 - Portionen mit − / + umstellen – die Mengen rechnen sich mit
 - Haken weg bei allem, was schon zu Hause ist, dann **„auf die Einkaufsliste“**: die Zutaten landen in der richtigen Kategorie; was schon offen auf der Liste steht, kommt nicht doppelt dazu
+- **Rezepttext einfügen & erkennen:** kompletten Text (z. B. Instagram-Beschreibung) einfügen – Titel, Portionen, Link, Zutaten mit Menge und Kategorie sowie die Schritte füllen sich von selbst. Läuft offline, nur mit Regeln, danach kurz prüfen
+- Link-Feld pro Rezept: im Rezept steht dann „▶ Video auf Instagram ansehen“
 - Suchfeld über den Rezepten findet Titel, Zutaten und Zubereitung („kase“ findet auch „Käse“)
 - Beide Teile teilen sich den Speicher im Browser – kein Server, kein Konto
 
@@ -29,6 +31,7 @@ In Safari öffnen → Teilen-Symbol → **„Zum Home-Bildschirm“**.
 | --- | --- |
 | `index.html` | Die Einkaufsliste (Design und Logik) |
 | `rezepte/index.html` | Das Rezeptbuch |
+| `rezepte/erkennen.js` | Erkennt Zutaten und Schritte in eingefügtem Text |
 | `schrift.woff` | Die Handschrift, von beiden Seiten genutzt |
 | `manifest.webmanifest` | Name und Symbol für den Home-Bildschirm |
 | `sw.js` | Speichert die App zwischen, damit sie offline startet |

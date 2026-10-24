@@ -192,9 +192,33 @@
   .spalten span:not(:first-child) { padding-left: 7px; }
   .zeilen .raus { color: var(--rot); padding: 0; display: flex; align-items: center; justify-content: center; }
   .zeilen .raus svg { width: 20px; height: 20px; }
+  /* Text einfügen & erkennen */
+  .einfuegen {
+    margin: 0 -8px var(--zeile); padding: 0 8px;
+    border: 2px dashed var(--tinte-hell); border-radius: 8px;
+  }
+  .einfuegen summary {
+    cursor: pointer; color: var(--tinte); font-size: 22px; font-weight: 700;
+    height: calc(var(--zeile) - 4px); line-height: calc(var(--zeile) - 4px);
+    list-style: none;
+  }
+  .einfuegen summary::-webkit-details-marker { display: none; }
+  .einfuegen summary::before { content: "▸ "; color: var(--rot); }
+  .einfuegen[open] summary::before { content: "▾ "; }
+  .einfuegen p { margin: 0; font-size: 20px; color: var(--tinte-hell); }
+  #f-text { width: 100%; min-height: calc(var(--zeile) * 5); height: calc(var(--zeile) * 5); resize: vertical; overflow: auto; font-size: 22px; }
+  .einfuegen .knoepfe { margin-top: 0; }
+  #erkannt { min-height: 0; }
+  #erkannt:not(:empty) { padding-bottom: 4px; color: var(--gruen); font-weight: 700; }
+  #erkannt.nix { color: var(--rot); }
+  #f-quelle { flex: 1; min-width: 0; font-size: 22px; }
+
+  /* Link zur Quelle in der Ansicht */
+  .quelle { display: inline-block; color: var(--rot); font-size: 22px; font-weight: 700; text-decoration: none; height: var(--zeile); max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+
   /* Ein Schritt = ein Feld, das mitwächst */
   .f-schritte li { display: flex; gap: 8px; }
-  textarea {
+  .f-schritte textarea {
     display: block; flex: 1; min-width: 0;
     resize: none; overflow: hidden;
     line-height: var(--zeile);
@@ -240,6 +264,7 @@
     <section id="ansicht" hidden>
       <div class="kopf"><a href="#">← alle Rezepte</a><a href="../">Einkaufsliste →</a></div>
       <h1 id="a-titel"></h1>
+      <a class="quelle" id="a-quelle" target="_blank" rel="noopener" hidden></a>
       <div class="portionen">
         für
         <button type="button" id="weniger" aria-label="Weniger Portionen">−</button>
@@ -267,8 +292,21 @@
     <section id="formular" hidden>
       <form id="f">
         <div class="kopf"><a href="#" id="abbrechen">← abbrechen</a></div>
+
+        <details class="einfuegen" id="einfuegen">
+          <summary>Rezepttext einfügen &amp; erkennen</summary>
+          <p>Kompletten Text hier hineinkopieren, z. B. eine Instagram-Beschreibung – Zutaten, Mengen und Schritte füllen sich von selbst.</p>
+          <textarea id="f-text" placeholder="Text hier einfügen …"></textarea>
+          <div class="knoepfe">
+            <button type="button" class="gruen" id="f-erkennen">erkennen</button>
+            <button type="button" class="leise" id="f-ablage" hidden>aus Zwischenablage holen</button>
+          </div>
+          <p id="erkannt" aria-live="polite"></p>
+        </details>
+
         <input id="f-titel" placeholder="Name des Rezepts" autocomplete="off" required>
         <label class="feld"><span>für</span><input id="f-portionen" type="number" min="1" max="99" value="2" inputmode="numeric"><span>Personen</span></label>
+        <label class="feld"><span>Link</span><input id="f-quelle" type="url" inputmode="url" placeholder="z. B. Instagram-Beitrag" autocomplete="off"></label>
 
         <h2>Zutaten</h2>
         <div class="spalten" aria-hidden="true"><span>Zutat</span><span>Menge</span><span>Kategorie</span><span></span></div>
@@ -286,6 +324,7 @@
   </div>
 </div>
 
+<script src="erkennen.js"></script>
 <script>
   // ---------- Daten ----------
   // Rezepte und Einkaufsliste liegen im selben Gerätespeicher (gleiche Internetadresse).
@@ -445,6 +484,7 @@
     $("ansicht").hidden = false;
     document.title = r.titel;
     $("a-titel").textContent = r.titel;
+    quelleZeigen(r.quelle);
     const ol = $("a-schritte");
     ol.innerHTML = "";
     const schritte = schritteVon(r);
@@ -456,6 +496,18 @@
       ol.appendChild(li);
     });
     zutatenZeichnen();
+  }
+
+  // Link zur Quelle: bei Videos "▶ Video ansehen", sonst die Seite
+  function quelleZeigen(url) {
+    const a = $("a-quelle");
+    a.hidden = !url;
+    if (!url) return;
+    a.href = url;
+    let host = "";
+    try { host = new URL(url).hostname.replace(/^www\./, ""); } catch (e) {}
+    const video = { "instagram.com": "Instagram", "tiktok.com": "TikTok", "youtube.com": "YouTube", "youtu.be": "YouTube", "m.youtube.com": "YouTube" }[host];
+    a.textContent = video ? `▶ Video auf ${video} ansehen` : `↗ Quelle öffnen${host ? " (" + host + ")" : ""}`;
   }
 
   // Was steht schon (noch offen) auf der Einkaufsliste?
@@ -567,13 +619,15 @@
     $("abbrechen").href = r ? "#r/" + r.id : "#";
     $("f-titel").value = r ? r.titel : "";
     $("f-portionen").value = r ? r.portionen : 2;
+    $("f-quelle").value = r && r.quelle ? r.quelle : "";
+    $("f-text").value = ""; $("erkannt").textContent = "";
+    $("einfuegen").open = !r;            // bei neuen Rezepten gleich aufgeklappt
     $("f-schritte").innerHTML = "";
     const schritte = r ? schritteVon(r) : [];
     // immer mindestens drei Schritte zum Ausfüllen
     for (let i = 0; i < Math.max(3, schritte.length); i++) schrittZeile(schritte[i] || "");
     $("f-zutaten").innerHTML = "";
     (r && r.zutaten.length ? r.zutaten : [undefined, undefined, undefined]).forEach(z => zutatZeile(z));
-    if (!r) $("f-titel").focus();
   }
 
   // ---------- Schritte im Formular ----------
@@ -601,6 +655,78 @@
   }
   $("f-schritt").addEventListener("click", () => schrittZeile().focus());
 
+  // ---------- Text einfügen & erkennen ----------
+  function linkSaeubern(t) {
+    t = (t || "").trim();
+    if (!t) return "";
+    if (!/^https?:\/\//i.test(t) && /^[\w-]+(\.[\w-]+)+/.test(t)) t = "https://" + t;
+    return /^https?:\/\//i.test(t) ? t : "";
+  }
+
+  // Kategorien, die du schon mal vergeben hast, haben Vorrang vor der eingebauten Wortliste
+  function gelernteKategorien() {
+    const m = new Map();
+    listeLesen().artikel.forEach(a => a.cat && a.cat !== "Sonstiges" && m.set(a.name.trim().toLowerCase(), a.cat));
+    rezepte.forEach(r => r.zutaten.forEach(z => z.cat && z.cat !== "Sonstiges" && m.set(z.name.trim().toLowerCase(), z.cat)));
+    return m;
+  }
+
+  function formularHatInhalt() {
+    const z = [...$("f-zutaten").querySelectorAll(".z-name")].some(i => i.value.trim());
+    const s = [...$("f-schritte").querySelectorAll("textarea")].some(t => t.value.trim());
+    return z || s;
+  }
+
+  function erkennenUndFuellen() {
+    const text = $("f-text").value;
+    const meldung = $("erkannt");
+    meldung.className = "";
+    if (!text.trim()) { meldung.textContent = ""; return; }
+    const e = Rezepterkennung.erkennen(text, gelernteKategorien());
+
+    if (!e.zutaten.length && !e.schritte.length) {
+      meldung.className = "nix";
+      meldung.textContent = "Hier konnte ich keine Zutaten oder Schritte finden. Tipp: Überschriften wie „Zutaten“ und „Zubereitung“ helfen.";
+      if (e.quelle && !$("f-quelle").value) $("f-quelle").value = e.quelle;
+      return;
+    }
+    if (formularHatInhalt() && !confirm("Die bisherigen Zutaten und Schritte durch den erkannten Text ersetzen?")) return;
+
+    if (e.titel && !$("f-titel").value.trim()) $("f-titel").value = e.titel;
+    if (e.portionen) $("f-portionen").value = e.portionen;
+    if (e.quelle) $("f-quelle").value = e.quelle;
+
+    $("f-zutaten").innerHTML = "";
+    (e.zutaten.length ? e.zutaten : [undefined, undefined, undefined]).forEach(z => zutatZeile(z));
+    $("f-schritte").innerHTML = "";
+    for (let i = 0; i < Math.max(3, e.schritte.length); i++) schrittZeile(e.schritte[i] || "");
+
+    const teile = [];
+    if (e.portionen) teile.push(`${e.portionen} ${e.portionen === 1 ? "Person" : "Personen"}`);
+    teile.push(`${e.zutaten.length} Zutaten`, `${e.schritte.length} Schritte`);
+    if (e.quelle) teile.push("Link");
+    meldung.textContent = `Erkannt: ${teile.join(", ")} ✓ Bitte kurz prüfen, dann speichern.`;
+  }
+
+  $("f-erkennen").addEventListener("click", erkennenUndFuellen);
+  // Beim Einfügen gleich loslegen
+  $("f-text").addEventListener("paste", () => setTimeout(erkennenUndFuellen, 0));
+
+  // "aus Zwischenablage holen" nur zeigen, wenn der Browser das kann
+  if (navigator.clipboard && navigator.clipboard.readText) {
+    $("f-ablage").hidden = false;
+    $("f-ablage").addEventListener("click", async () => {
+      try {
+        const t = await navigator.clipboard.readText();
+        if (t && t.trim()) { $("f-text").value = t; erkennenUndFuellen(); }
+        else { $("erkannt").className = "nix"; $("erkannt").textContent = "Die Zwischenablage ist leer."; }
+      } catch (err) {
+        $("erkannt").className = "nix";
+        $("erkannt").textContent = "Kein Zugriff auf die Zwischenablage – füge den Text einfach ins Feld ein (lange tippen → Einsetzen).";
+      }
+    });
+  }
+
   $("f-mehr").addEventListener("click", () => zutatZeile().querySelector(".z-name").focus());
 
   $("f").addEventListener("submit", e => {
@@ -617,6 +743,7 @@
           cat: li.querySelector(".z-kat").value
         }))
         .filter(z => z.name),
+      quelle: linkSaeubern($("f-quelle").value),
       // leere Schritte fallen weg, der Rest wird neu durchnummeriert
       schritte: [...$("f-schritte").querySelectorAll("textarea")].map(t => t.value.trim()).filter(Boolean)
     };
