@@ -312,7 +312,15 @@
     const menge = document.getElementById("menge");
     const kat = document.getElementById("kategorie");
     if (!name.value.trim()) return;
-    artikel.push({ id: Date.now() + Math.random(), name: name.value.trim(), qty: menge.value.trim(), cat: kat.value, done: false });
+    // Steht der Artikel schon als erledigt drauf? Dann wieder auf offen setzen statt doppelt eintragen.
+    const neuName = name.value.trim().toLowerCase();
+    const erledigt = artikel.find(a => a.done && a.name.trim().toLowerCase() === neuName);
+    if (erledigt && !artikel.some(a => !a.done && a.name.trim().toLowerCase() === neuName)) {
+      erledigt.done = false;
+      if (menge.value.trim()) erledigt.qty = menge.value.trim();
+    } else {
+      artikel.push({ id: Date.now() + Math.random(), name: name.value.trim(), qty: menge.value.trim(), cat: kat.value, done: false });
+    }
     name.value = ""; menge.value = ""; name.focus();
     speichern(); zeichnen();
   });

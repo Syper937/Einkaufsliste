@@ -27,6 +27,7 @@ Oben rechts auf **„Rezepte →“** tippen. Das Rezeptbuch hat bewusst ein sch
 - **Rezeptbuch sichern / Sicherung laden:** eine Datei mit allen Rezepten und Fotos – zum Aufheben, für ein neues Handy oder für Freunde
 - **Instagram:** Knopf „aus Zwischenablage“ legt sofort ein neues Rezept aus kopiertem Text an. Anleitung für einen iPhone-Kurzbefehl, der Beschreibung und Link zusammen kopiert, steht in der App unter „So holst du Rezepte aus Instagram“
 - Suchfeld über den Rezepten findet Titel, Zutaten und Zubereitung („kase“ findet auch „Käse“)
+- Zutaten, die schon als erledigt auf der Einkaufsliste stehen, werden wieder auf offen gesetzt statt doppelt eingetragen (gilt auch beim Eintippen in der Einkaufsliste)
 - Beide Teile teilen sich den Speicher im Browser – kein Server, kein Konto
 
 ## Auf dem iPhone als App
