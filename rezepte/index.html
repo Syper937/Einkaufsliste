@@ -300,7 +300,7 @@
   <!-- ================= Übersicht ================= -->
   <section id="uebersicht" hidden>
     <header class="leiste">
-      <a href="../index.html" class="zurueck">‹ Einkaufsliste</a>
+      <a href="../index.html" class="zurueck">‹ Start</a>
       <div class="symbole">
         <button type="button" class="symbol" id="sichern" title="Rezeptbuch sichern" aria-label="Rezeptbuch sichern">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h11l3 3v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V3z"/><path d="M8 3v5h7V3"/><rect x="8" y="13" width="8" height="5" rx="1"/></svg>
@@ -847,7 +847,7 @@
     if (wieder) teile.push(`${mehrzahl(wieder, "erledigte Zutat", "erledigte Zutaten")} wieder auf offen gesetzt`);
     $("meldung").append(`✓ ${teile.join(", ") || "Alles steht schon auf der Einkaufsliste"}. `);
     const link = document.createElement("a");
-    link.href = "../index.html"; link.textContent = "Zur Einkaufsliste ›";
+    link.href = "../liste/index.html"; link.textContent = "Zur Einkaufsliste ›";
     $("meldung").append(link);
   });
 

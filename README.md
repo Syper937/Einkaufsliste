@@ -4,7 +4,17 @@ Eine interaktive Einkaufsliste im Look eines linierten Notizblocks – gebaut mi
 
 **Live:** https://syper937.github.io/Einkaufsliste/
 
-## Funktionen
+## Startseite
+Die App startet mit drei Kacheln: **Einkaufsliste**, **Rezepte** und **Essensplan**. Jede Kachel zeigt gleich das Wichtigste – wie viel noch offen ist, wie viele Rezepte es gibt und was heute auf dem Plan steht.
+
+## Essensplan
+- Die Tage einer Woche (Montag bis Sonntag) untereinander, der heutige Tag ist markiert
+- Unter jedem Tag ein Freifeld für eigene Einträge, z. B. „Reste“ oder „Essen bei Oma“
+- **„+ Rezept einfügen“** wählt ein gespeichertes Rezept aus dem Rezeptbuch (mit Suche); antippen öffnet das Rezept, × nimmt es wieder aus dem Plan
+- Mit ‹ und › durch die Wochen blättern, „Heute“ springt zurück
+- Alles wird sofort gespeichert
+
+## Einkaufsliste – Funktionen
 - Artikel mit Kategorie und Menge eintragen (grüner Knopf „hinzufügen“), abhaken, mit der roten Mülltonne löschen
 - Erledigte Artikel lassen sich mit dem Kreispfeil ↺ wieder auf „offen“ setzen
 - Artikel und Kategorien per Ziehen am Griff ⠿ verschieben (auch mit dem Finger)
@@ -13,7 +23,7 @@ Eine interaktive Einkaufsliste im Look eines linierten Notizblocks – gebaut mi
 - Funktioniert nach dem ersten Öffnen auch offline
 
 ## Rezeptbuch
-Oben rechts auf **„Rezepte →“** tippen. Das Rezeptbuch hat bewusst ein schlichtes, klares Design – der Notizblock-Look bleibt der Einkaufsliste vorbehalten.
+Auf der Startseite die Kachel **„Rezepte“** antippen. Das Rezeptbuch hat bewusst ein schlichtes, klares Design – der Notizblock-Look bleibt der Einkaufsliste vorbehalten.
 - Neues Rezept mit zwei Reitern: **Selbst eintippen** oder **Aus Foto oder Text**
 - **Aus Bildschirmfoto lesen:** Bildschirmfoto einer Rezeptbeschreibung (z. B. Instagram) auswählen – die App liest den Text auf dem Gerät heraus (Tesseract, deutsche Sprachdaten) und füllt das Rezept aus. Instagram-Oberfläche wie Likes und Kommentare wird herausgefiltert, überlappende Bildschirmfotos werden zusammengeführt
 - Symbole oben rechts: Rezeptbuch sichern, Sicherung laden, Hilfe – jede Aktion fragt vorher mit Ja/Nein nach
@@ -28,7 +38,7 @@ Oben rechts auf **„Rezepte →“** tippen. Das Rezeptbuch hat bewusst ein sch
 - **Instagram:** Knopf „aus Zwischenablage“ legt sofort ein neues Rezept aus kopiertem Text an. Anleitung für einen iPhone-Kurzbefehl, der Beschreibung und Link zusammen kopiert, steht in der App unter „So holst du Rezepte aus Instagram“
 - Suchfeld über den Rezepten findet Titel, Zutaten und Zubereitung („kase“ findet auch „Käse“)
 - Zutaten, die schon als erledigt auf der Einkaufsliste stehen, werden wieder auf offen gesetzt statt doppelt eingetragen (gilt auch beim Eintippen in der Einkaufsliste)
-- Beide Teile teilen sich den Speicher im Browser – kein Server, kein Konto
+- Alle Teile (Liste, Rezepte, Essensplan) teilen sich den Speicher im Browser – kein Server, kein Konto
 
 ## Auf dem iPhone als App
 In Safari öffnen → Teilen-Symbol → **„Zum Home-Bildschirm“**.
@@ -38,13 +48,15 @@ Wichtig: Die App immer über das Symbol auf dem Home-Bildschirm öffnen. Safari 
 ## Dateien
 | Datei | Wozu |
 | --- | --- |
-| `index.html` | Die Einkaufsliste (Design und Logik) |
+| `index.html` | Die Startseite mit den drei Kacheln |
+| `liste/index.html` | Die Einkaufsliste (Design und Logik) |
+| `essensplan/index.html` | Der Essensplan |
 | `rezepte/index.html` | Das Rezeptbuch |
 | `rezepte/bildtext.js` | Bereitet Bildschirmfotos vor und schickt sie an die Texterkennung |
 | `rezepte/ocr/` | Texterkennung: Tesseract-Engine (WebAssembly), deutsche Sprachdaten, Hintergrund-Worker `leser.js` |
 | `rezepte/fotos.js` | Speichert die Fotos in IndexedDB (größerer Speicher im Browser) |
 | `rezepte/erkennen.js` | Erkennt Zutaten und Schritte in eingefügtem Text |
-| `schrift.woff` | Die Handschrift, von beiden Seiten genutzt |
+| `schrift.woff` | Die Handschrift (Einkaufsliste und ihre Kachel) |
 | `manifest.webmanifest` | Name und Symbol für den Home-Bildschirm |
 | `sw.js` | Speichert die App zwischen, damit sie offline startet |
 | `icon-180.png`, `icon-512.png` | App-Symbole |

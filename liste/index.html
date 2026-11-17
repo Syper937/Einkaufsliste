@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Einkaufsliste</title>
+<!-- Für den iPhone-Home-Bildschirm -->
+<meta name="theme-color" content="#d9d2c3">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Einkauf">
+<link rel="apple-touch-icon" href="../icon-180.png">
+<link rel="manifest" href="../manifest.webmanifest">
+<style>
+  /* Handschrift "Caveat" (SIL Open Font License) – liegt als Datei bei, wird für offline zwischengespeichert */
+  @font-face {
+    font-family: "Kuli";
+    src: url("../schrift.woff") format("woff");
+    font-weight: 400 700;
+  }
+
+  :root {
+    --zeile: 36px;          /* Abstand der Linien auf dem Block */
+    --tinte: #1d3c8f;       /* Kugelschreiber-Blau */
+    --tinte-hell: #6b7fb8;
+    --rot: #c2402f;         /* Rotstift */
+    --papier: #fdfbf3;
+    --linie: #b8d0e8;
+    --rand: #e8a3a3;
+    --tisch: #d9d2c3;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--tisch);
+    padding: max(32px, env(safe-area-inset-top)) 16px max(32px, env(safe-area-inset-bottom));
+    -webkit-text-size-adjust: 100%;
+    touch-action: manipulation;
+    font-family: "Kuli", "Segoe Print", "Ink Free", cursive;
+    color: var(--tinte);
+    font-size: 26px;
+    line-height: var(--zeile);
+  }
+
+  /* ---------- Der Notizblock ---------- */
+  .block {
+    max-width: 600px;
+    margin: 0 auto;
+    background: var(--papier);
+    border-radius: 4px 4px 2px 2px;
+    box-shadow: 0 1px 2px rgba(0,0,0,.15), 0 12px 30px rgba(0,0,0,.18);
+    position: relative;
+  }
+  /* Spiralbindung oben */
+  .spirale {
+    height: 44px;
+    border-bottom: 1px dashed #d6cfbf;
+    background:
+      radial-gradient(circle at 50% 60%, var(--tisch) 0 7px, transparent 8px) 0 0 / 34px 44px repeat-x;
+  }
+  /* Linien + roter Rand */
+  .seite {
+    padding: var(--zeile) 24px calc(var(--zeile) * 2) 72px;
+    min-height: calc(var(--zeile) * 16);
+    background:
+      linear-gradient(to right, transparent 56px, var(--rand) 56px, var(--rand) 58px, transparent 58px),
+      repeating-linear-gradient(to bottom, transparent 0, transparent calc(var(--zeile) - 1px), var(--linie) calc(var(--zeile) - 1px), var(--linie) var(--zeile));
+    background-position: 0 0, 0 -3px;   /* Schrift sitzt auf der Linie */
+  }
+
+  h1 {
+    margin: 0;
+    font-size: 48px;
+    line-height: calc(var(--zeile) * 2);
+    font-weight: 700;
+    transform: rotate(-1deg);
+    transform-origin: left;
+  }
+  .summe { margin: 0; color: var(--tinte-hell); font-size: 22px; height: var(--zeile); }
+
+  /* ---------- Eingabezeile ---------- */
+  form {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 70px 150px auto;
+    gap: 10px;
+    margin-top: var(--zeile);
+  }
+  form > * { min-width: 0; }
+  input, select, button {
+    font: inherit;
+    color: var(--tinte);
+    background: transparent;
+    border: none;
+    height: var(--zeile);
+    padding: 0 2px;
+  }
+  input::placeholder { color: #a9a49a; }
+  input:focus, select:focus { outline: none; background: rgba(29,60,143,.06); border-radius: 4px; }
+  select { font-size: 22px; cursor: pointer; }
+  button { cursor: pointer; }
+  /* Grüner Knopf "hinzufügen" – passt genau in eine Linie */
+  .dazu {
+    background: #2e8b4f; color: #fff;
+    font-size: 24px; font-weight: 700; line-height: 1;
+    height: 28px; margin: 3px 0 5px;
+    border-radius: 8px; padding: 0 14px;
+    white-space: nowrap; justify-self: start;
+    box-shadow: 0 2px 0 #1f6638;
+  }
+  .dazu:hover { background: #267a44; }
+  .dazu:active { transform: translateY(2px); box-shadow: none; }
+
+  /* ---------- Filter ---------- */
+  .leiste {
+    display: flex; gap: 14px; flex-wrap: wrap; align-items: center;
+    margin-top: var(--zeile); font-size: 22px;
+  }
+  .filter { font-size: 22px; padding: 0 8px; color: var(--tinte-hell); }
+  .filter.aktiv { color: var(--tinte); border: 2px solid var(--tinte); border-radius: 50% 45% 55% 48% / 60% 50% 55% 45%; height: 32px; line-height: 28px; }
+  .leiste .platz { flex: 1; }
+  .streichen { color: var(--rot); font-size: 22px; }
+
+  /* ---------- Liste ---------- */
+  .gruppe { margin-top: var(--zeile); border-radius: 4px; }
+  .gruppe h2 {
+    margin: 0;
+    height: var(--zeile);
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--rot);
+    cursor: grab;
+    user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+    touch-action: none;
+    display: flex; align-items: center; gap: 10px;
+    margin-left: -26px;
+  }
+  .gruppe h2 .griff { width: 16px; text-align: center; }
+  .gruppe h2 .titel { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px; }
+  .griff { color: #b3ad9f; font-size: 18px; opacity: 0; transition: opacity .15s; font-family: system-ui, sans-serif; }
+  .gruppe h2:hover .griff, li:hover .griff { opacity: 1; }
+
+  ul { list-style: none; margin: 0; padding: 0; min-height: 4px; }
+  li {
+    height: var(--zeile);
+    display: flex; align-items: center; gap: 10px;
+    margin-left: -26px;            /* Griff ragt in den Rand */
+    cursor: grab;
+    -webkit-user-select: none; user-select: none;
+  }
+  li .griff {
+    width: 16px; text-align: center; align-self: stretch; line-height: var(--zeile);
+    touch-action: none; -webkit-touch-callout: none;
+  }
+  body.am-ziehen, body.am-ziehen * { cursor: grabbing !important; user-select: none; -webkit-user-select: none; }
+
+  /* Selbstgemalte Checkbox */
+  li input[type=checkbox] {
+    appearance: none;
+    width: 20px; height: 20px; margin: 0;
+    border: 2px solid var(--tinte);
+    border-radius: 3px 5px 2px 4px;
+    transform: rotate(-3deg);
+    cursor: pointer; position: relative; flex: none;
+  }
+  li input[type=checkbox]:checked::after {
+    content: "";
+    position: absolute; left: 4px; top: -8px;
+    width: 9px; height: 20px;
+    border: solid var(--tinte); border-width: 0 3px 3px 0;
+    transform: rotate(40deg);
+  }
+  li .name { flex: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  li.erledigt .name {
+    text-decoration: line-through; text-decoration-thickness: 2px;
+    color: var(--tinte-hell);
+  }
+  li .menge { color: var(--tinte); white-space: nowrap; }
+  li .mal { color: var(--tinte-hell); margin-right: 4px; }
+  /* Rote Mülltonne = löschen */
+  li .muell {
+    color: var(--rot); padding: 0 4px; height: var(--zeile);
+    display: flex; align-items: center; flex: none; opacity: .85;
+  }
+  li .muell:hover { opacity: 1; }
+  li .muell svg { width: 20px; height: 20px; display: block; }
+  li .zurueck { color: var(--tinte); }
+
+  /* Verschieben */
+  .zieht { opacity: .35; }
+  li.vorher  { box-shadow: inset 0 3px 0 -1px var(--rot); }
+  li.nachher { box-shadow: inset 0 -3px 0 -1px var(--rot); }
+  .gruppe.vorher  { box-shadow: 0 -3px 0 0 var(--rot); }
+  .gruppe.nachher { box-shadow: 0 3px 0 0 var(--rot); }
+  .gruppe.hinein  { background: rgba(194,64,47,.07); }
+
+  .leer { color: #a9a49a; margin-top: var(--zeile); }
+
+  /* Link zum Rezeptbuch, oben rechts */
+  .umschalter {
+    float: right; position: relative; z-index: 1;
+    color: var(--rot); font-size: 22px; font-weight: 700;
+    text-decoration: none; height: var(--zeile);
+  }
+
+  /* Touchscreens: Griffe immer sichtbar und größer, Tippflächen größer */
+  @media (hover: none) {
+    .griff { opacity: 1; }
+    li .griff, .gruppe h2 .griff { width: 30px; font-size: 20px; }
+    li, .gruppe h2 { margin-left: -40px; }
+    li input[type=checkbox] { width: 24px; height: 24px; }
+    li .muell { padding: 0 8px; }
+    li .muell svg { width: 22px; height: 22px; }
+  }
+
+  /* Handy (z. B. iPhone 14) */
+  @media (max-width: 560px) {
+    body { font-size: 24px; padding-left: 8px; padding-right: 8px; }
+    h1 { font-size: 42px; }
+    .seite { padding-left: 66px; padding-right: 14px; }
+    /* Eingaben untereinander: Kategorie, Artikel, Menge, Plus */
+    form {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-areas: "kat" "name" "menge" "dazu";
+      gap: 0;
+    }
+    #kategorie { grid-area: kat; font-size: 22px; width: 100%; }
+    #name { grid-area: name; }
+    #menge { grid-area: menge; }
+    .dazu { grid-area: dazu; }
+    .leiste { gap: 6px; }
+    .filter, .streichen { font-size: 20px; padding: 0 5px; }
+  }
+</style>
+</head>
+<body>
+<div class="block">
+  <div class="spirale"></div>
+  <div class="seite">
+    <a class="umschalter" href="../index.html">‹ Start</a>
+    <h1>Einkaufsliste</h1>
+    <p class="summe" id="summe"></p>
+
+    <form id="eingabe">
+      <input id="name" placeholder="Artikel" autocomplete="off" required>
+      <input id="menge" placeholder="Menge" autocomplete="off">
+      <select id="kategorie">
+        <option>Obst &amp; Gemüse</option>
+        <option>Kühlregal</option>
+        <option>Brot &amp; Backwaren</option>
+        <option>Vorrat</option>
+        <option>Getränke</option>
+        <option>Drogerie</option>
+        <option selected>Sonstiges</option>
+      </select>
+      <button class="dazu" type="submit" >hinzufügen</button>
+    </form>
+
+    <div class="leiste">
+      <button class="filter aktiv" data-filter="alle">Alle</button>
+      <button class="filter" data-filter="offen">Offen</button>
+      <button class="filter" data-filter="erledigt">Erledigt</button>
+      <span class="platz"></span>
+      <button class="streichen" id="aufraeumen">Erledigte löschen</button>
+    </div>
+
+    <div id="liste"></div>
+  </div>
+</div>
+
+<script>
+  // ---------- Daten laden und speichern (bleiben im Browser erhalten) ----------
+  const SPEICHER = "einkaufsliste";
+  let artikel = [];          // alle Artikel, in der Reihenfolge, wie sie angezeigt werden
+  let reihenfolge = [];      // Reihenfolge der Kategorien
+  let filter = "alle";
+
+  try {
+    const gespeichert = JSON.parse(localStorage.getItem(SPEICHER));
+    if (Array.isArray(gespeichert)) artikel = gespeichert;              // alte Version der Liste
+    else if (gespeichert) { artikel = gespeichert.artikel || []; reihenfolge = gespeichert.reihenfolge || []; }
+  } catch (e) {}
+
+  // Das Rezeptbuch kann Artikel dazuschreiben – beim Zurückkehren frisch laden
+  function neuLaden() {
+    try {
+      const g = JSON.parse(localStorage.getItem(SPEICHER));
+      if (Array.isArray(g)) { artikel = g; }
+      else if (g) { artikel = g.artikel || []; reihenfolge = g.reihenfolge || []; }
+    } catch (e) {}
+    zeichnen();
+  }
+  window.addEventListener("pageshow", e => { if (e.persisted) neuLaden(); });
+  window.addEventListener("storage", e => { if (e.key === SPEICHER) neuLaden(); });
+  document.addEventListener("visibilitychange", () => { if (!document.hidden && !zug) neuLaden(); });
+
+  function speichern() {
+    try { localStorage.setItem(SPEICHER, JSON.stringify({ artikel, reihenfolge })); } catch (e) {}
+  }
+
+  // Kategorien in der gespeicherten Reihenfolge, neue hinten anhängen
+  function kategorien() {
+    artikel.forEach(a => { if (!reihenfolge.includes(a.cat)) reihenfolge.push(a.cat); });
+    return reihenfolge.filter(k => artikel.some(a => a.cat === k));
+  }
+
+  // ---------- Neuen Artikel hinzufügen ----------
+  document.getElementById("eingabe").addEventListener("submit", e => {
+    e.preventDefault();
+    const name = document.getElementById("name");
+    const menge = document.getElementById("menge");
+    const kat = document.getElementById("kategorie");
+    if (!name.value.trim()) return;
+    // Steht der Artikel schon als erledigt drauf? Dann wieder auf offen setzen statt doppelt eintragen.
+    const neuName = name.value.trim().toLowerCase();
+    const erledigt = artikel.find(a => a.done && a.name.trim().toLowerCase() === neuName);
+    if (erledigt && !artikel.some(a => !a.done && a.name.trim().toLowerCase() === neuName)) {
+      erledigt.done = false;
+      if (menge.value.trim()) erledigt.qty = menge.value.trim();
+    } else {
+      artikel.push({ id: Date.now() + Math.random(), name: name.value.trim(), qty: menge.value.trim(), cat: kat.value, done: false });
+    }
+    name.value = ""; menge.value = ""; name.focus();
+    speichern(); zeichnen();
+  });
+
+  // ---------- Filter ----------
+  document.querySelectorAll(".filter").forEach(knopf => {
+    knopf.addEventListener("click", () => {
+      filter = knopf.dataset.filter;
+      document.querySelectorAll(".filter").forEach(k => k.classList.toggle("aktiv", k === knopf));
+      zeichnen();
+    });
+  });
+
+  document.getElementById("aufraeumen").addEventListener("click", () => {
+    artikel = artikel.filter(a => !a.done);
+    speichern(); zeichnen();
+  });
+
+  // ---------- Verschieben per Ziehen (Finger und Maus) ----------
+  // Auf dem Handy zieht man am Griff ⠿, am PC auch an der ganzen Zeile.
+  let zug = null;   // was gerade gezogen wird
+
+  function markierungenWeg() {
+    document.querySelectorAll(".vorher, .nachher, .hinein").forEach(el => el.classList.remove("vorher", "nachher", "hinein"));
+  }
+  function untereHaelfte(y, el) {
+    const r = el.getBoundingClientRect();
+    return y > r.top + r.height / 2;
+  }
+
+  function zugVorbereiten(e, info, el) {
+    if (e.button > 0) return;
+    zug = { ...info, el, startX: e.clientX, startY: e.clientY, aktiv: false, ziel: null };
+    if (e.pointerType !== "mouse") { e.preventDefault(); zugStarten(); }   // Finger: sofort los
+  }
+  function zugStarten() {
+    zug.aktiv = true;
+    zug.el.classList.add("zieht");
+    document.body.classList.add("am-ziehen");
+    if (navigator.vibrate) navigator.vibrate(10);
+  }
+
+  document.addEventListener("pointermove", e => {
+    if (!zug) return;
+    if (!zug.aktiv) {
+      // Maus: erst ab ein paar Pixeln Bewegung ziehen, damit Klicks normal funktionieren
+      if (Math.hypot(e.clientX - zug.startX, e.clientY - zug.startY) < 6) return;
+      zugStarten();
+    }
+    e.preventDefault();
+
+    // am Bildschirmrand automatisch scrollen
+    if (e.clientY < 70) window.scrollBy(0, -12);
+    else if (e.clientY > window.innerHeight - 70) window.scrollBy(0, 12);
+
+    markierungenWeg();
+    zug.ziel = null;
+    const unten = document.elementFromPoint(e.clientX, e.clientY);
+    if (!unten) return;
+
+    if (zug.art === "artikel") {
+      const li = unten.closest("li");
+      if (li && li !== zug.el) {
+        const danach = untereHaelfte(e.clientY, li);
+        li.classList.add(danach ? "nachher" : "vorher");
+        zug.ziel = { id: li.dataset.id, danach };
+      } else if (!li) {
+        const gruppe = unten.closest(".gruppe");
+        if (gruppe) { gruppe.classList.add("hinein"); zug.ziel = { kat: gruppe.dataset.kat }; }
+      }
+    } else {
+      const gruppe = unten.closest(".gruppe");
+      if (gruppe && gruppe.dataset.kat !== zug.kat) {
+        const danach = untereHaelfte(e.clientY, gruppe);
+        gruppe.classList.add(danach ? "nachher" : "vorher");
+        zug.ziel = { kat: gruppe.dataset.kat, danach };
+      }
+    }
+  }, { passive: false });
+
+  function zugEnde(abbrechen) {
+    if (!zug) return;
+    const { art, id, kat, ziel, aktiv } = zug;
+    zug = null;
+    markierungenWeg();
+    document.body.classList.remove("am-ziehen");
+    document.querySelectorAll(".zieht").forEach(el => el.classList.remove("zieht"));
+    if (abbrechen || !aktiv || !ziel) return;
+    if (art === "artikel" && ziel.id) artikelVerschieben(id, ziel.id, ziel.danach);
+    else if (art === "artikel") artikelInKategorie(id, ziel.kat);
+    else kategorieVerschieben(kat, ziel.kat, ziel.danach);
+  }
+  document.addEventListener("pointerup", () => zugEnde(false));
+  document.addEventListener("pointercancel", () => zugEnde(true));
+
+  const finde = id => artikel.find(x => String(x.id) === String(id));
+
+  // Artikel neben einen anderen Artikel legen (auch in eine andere Kategorie)
+  function artikelVerschieben(id, zielId, danach) {
+    const a = finde(id), ziel = finde(zielId);
+    artikel = artikel.filter(x => x !== a);
+    const i = artikel.indexOf(ziel);
+    a.cat = ziel.cat;
+    artikel.splice(danach ? i + 1 : i, 0, a);
+    speichern(); zeichnen();
+  }
+  // Artikel ans Ende einer Kategorie legen
+  function artikelInKategorie(id, kat) {
+    const a = finde(id);
+    artikel = artikel.filter(x => x !== a);
+    a.cat = kat;
+    artikel.push(a);
+    speichern(); zeichnen();
+  }
+  // Kategorie vor oder hinter eine andere Kategorie legen
+  function kategorieVerschieben(kat, zielKat, danach) {
+    kategorien();
+    reihenfolge = reihenfolge.filter(k => k !== kat);
+    const i = reihenfolge.indexOf(zielKat);
+    reihenfolge.splice(danach ? i + 1 : i, 0, kat);
+    speichern(); zeichnen();
+  }
+
+  // ---------- Liste zeichnen ----------
+  function zeichnen() {
+    const liste = document.getElementById("liste");
+    liste.innerHTML = "";
+
+    const erledigt = artikel.filter(a => a.done).length;
+    document.getElementById("summe").textContent = artikel.length
+      ? `${erledigt} von ${artikel.length} Sachen im Wagen`
+      : "";
+
+    const sichtbar = artikel.filter(a => filter === "alle" || (filter === "erledigt") === a.done);
+    if (!sichtbar.length) {
+      liste.innerHTML = `<p class="leer">${artikel.length ? "Hier steht gerade nichts." : "Schreib oben deinen ersten Artikel auf …"}</p>`;
+      return;
+    }
+
+    kategorien().forEach(kat => {
+      const inGruppe = sichtbar.filter(a => a.cat === kat);
+      if (!inGruppe.length) return;
+
+      const gruppe = document.createElement("section");
+      gruppe.className = "gruppe";
+      gruppe.dataset.kat = kat;
+
+      // Überschrift = Griff zum Verschieben der Kategorie
+      const h2 = document.createElement("h2");
+      h2.title = "Zum Verschieben ziehen";
+      h2.innerHTML = `<span class="griff">⠿</span><span class="titel"></span>`;
+      h2.querySelector(".titel").textContent = kat;
+      h2.addEventListener("pointerdown", e => zugVorbereiten(e, { art: "kategorie", kat }, gruppe));
+
+      const ul = document.createElement("ul");
+      inGruppe.forEach(a => ul.appendChild(zeile(a)));
+
+      gruppe.append(h2, ul);
+      liste.appendChild(gruppe);
+    });
+  }
+
+  // Eine Zeile: Griff · Kästchen · Name · × (löschen) · Menge
+  function zeile(a) {
+    const li = document.createElement("li");
+    li.dataset.id = a.id;
+    if (a.done) li.classList.add("erledigt");
+
+    const griff = document.createElement("span");
+    griff.className = "griff";
+    griff.textContent = "⠿";
+    griff.title = "Zum Verschieben ziehen";
+    griff.addEventListener("pointerdown", e => zugVorbereiten(e, { art: "artikel", id: a.id }, li));
+
+    // Maus: auch die ganze Zeile ist anfassbar (außer Kästchen und ×)
+    li.addEventListener("pointerdown", e => {
+      if (e.pointerType === "mouse" && !e.target.closest("input, button, .griff"))
+        zugVorbereiten(e, { art: "artikel", id: a.id }, li);
+    });
+
+    const box = document.createElement("input");
+    box.type = "checkbox";
+    box.checked = a.done;
+    box.addEventListener("change", () => { a.done = box.checked; speichern(); zeichnen(); });
+
+    const name = document.createElement("span");
+    name.className = "name";
+    name.textContent = a.name;
+    name.title = "Doppelklick / Doppeltippen zum Umbenennen";
+    name.addEventListener("dblclick", () => {
+      const neu = prompt("Artikel umbenennen:", a.name);
+      if (neu && neu.trim()) { a.name = neu.trim(); speichern(); zeichnen(); }
+    });
+
+    // Menge als "× 2" – das × ist nur ein Malzeichen
+    const menge = document.createElement("span");
+    menge.className = "menge";
+    if (a.qty) menge.innerHTML = `<span class="mal">×</span>`;
+    menge.append(a.qty);
+
+    // Rote Mülltonne zum Löschen
+    const muell = document.createElement("button");
+    muell.className = "muell";
+    muell.title = "Löschen";
+    muell.setAttribute("aria-label", "Löschen");
+    muell.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>`;
+    muell.addEventListener("click", () => { artikel = artikel.filter(x => x !== a); speichern(); zeichnen(); });
+
+    // Erledigt? Dann statt Mülltonne ein Kreispfeil zum Rückgängigmachen
+    const zurueck = document.createElement("button");
+    zurueck.className = "muell zurueck";
+    zurueck.title = "Rückgängig – wieder offen";
+    zurueck.setAttribute("aria-label", "Rückgängig");
+    zurueck.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 3v6h6"/></svg>`;
+    zurueck.addEventListener("click", () => { a.done = false; speichern(); zeichnen(); });
+
+    li.append(griff, box, name, menge, a.done ? zurueck : muell);
+    return li;
+  }
+
+  zeichnen();
+
+  // ---------- Offline-Betrieb (nur auf der GitHub-Seite, nicht als lokale Datei) ----------
+  if ("serviceWorker" in navigator && location.protocol === "https:") {
+    navigator.serviceWorker.register("../sw.js").catch(() => {});
+  }
+</script>
+</body>
+</html>

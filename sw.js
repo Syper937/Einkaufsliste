@@ -1,7 +1,7 @@
 // Speichert die App auf dem Handy zwischen, damit sie auch ohne Internet startet.
 // Bei Änderungen an der App die Versionsnummer erhöhen.
-const VERSION = "einkaufsliste-v16";
-const DATEIEN = ["./", "index.html", "manifest.webmanifest", "icon-180.png", "icon-512.png", "schrift.woff", "rezepte/", "rezepte/index.html", "rezepte/erkennen.js", "rezepte/fotos.js", "rezepte/bildtext.js"];
+const VERSION = "einkaufsliste-v17";
+const DATEIEN = ["./", "index.html", "manifest.webmanifest", "icon-180.png", "icon-512.png", "schrift.woff", "liste/", "liste/index.html", "rezepte/", "rezepte/index.html", "rezepte/erkennen.js", "rezepte/fotos.js", "rezepte/bildtext.js", "essensplan/", "essensplan/index.html"];
 
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(VERSION).then(c => c.addAll(DATEIEN)));

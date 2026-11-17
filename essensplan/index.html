@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Essensplan</title>
+<!-- Gehört zur Einkaufsliste-App: gleiche Adresse, gleicher Speicher -->
+<meta name="theme-color" content="#f4f2ee">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Einkauf">
+<link rel="apple-touch-icon" href="../icon-180.png">
+<link rel="manifest" href="../manifest.webmanifest">
+<style>
+  /* Schlichtes Design wie im Rezeptbuch */
+  :root {
+    --hg: #f4f2ee;
+    --karte: #ffffff;
+    --text: #1d1d1f;
+    --text2: #6e6c69;
+    --linie: #e7e3dc;
+    --feld: #f7f5f1;
+    --gruen: #2e8b4f;
+    --gruen-hell: #e6f3ea;
+    --orange: #d9822b;
+    --orange-hell: #fbefe1;
+    --beige: #efe9df;
+    --schatten: 0 1px 2px rgba(0,0,0,.05), 0 2px 8px rgba(0,0,0,.04);
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; min-height: 100vh;
+    background: var(--hg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 17px; line-height: 1.45;
+    padding: 0 max(16px, env(safe-area-inset-right)) max(32px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  }
+  [hidden] { display: none !important; }
+  .app { max-width: 640px; margin: 0 auto; }
+  a { color: var(--gruen); text-decoration: none; }
+  button, input, textarea { font: inherit; color: inherit; }
+  button { cursor: pointer; background: none; border: none; padding: 0; }
+
+  /* ---------- Kopfleiste ---------- */
+  .leiste {
+    position: sticky; top: 0; z-index: 5;
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    min-height: 52px; padding-top: env(safe-area-inset-top);
+    margin: 0 -16px; padding-left: 16px; padding-right: 16px;
+    background: rgba(244,242,238,.92);
+    -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+  }
+  .zurueck { font-size: 17px; font-weight: 500; white-space: nowrap; }
+  .heute-knopf { color: var(--gruen); font-weight: 600; font-size: 16px; padding: 6px 0; }
+  .heute-knopf:disabled { color: #b9b3aa; cursor: default; }
+
+  h1 { font-size: 30px; line-height: 1.15; font-weight: 700; margin: 6px 0 4px; }
+
+  /* ---------- Woche wählen ---------- */
+  .wochenwahl {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    margin-top: 10px; padding: 6px; background: var(--karte); border-radius: 14px; box-shadow: var(--schatten);
+  }
+  .wochenwahl button {
+    width: 40px; height: 40px; border-radius: 10px; font-size: 22px; color: var(--gruen);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .wochenwahl button:hover { background: var(--feld); }
+  .wochenwahl .mitte { text-align: center; line-height: 1.25; }
+  .wochenwahl .kw { font-size: 13px; color: var(--text2); }
+  .wochenwahl .spanne { font-weight: 600; }
+
+  /* ---------- Tage ---------- */
+  .tag { background: var(--karte); border-radius: 16px; padding: 14px 16px; margin-top: 12px; box-shadow: var(--schatten); }
+  .tag.heute { box-shadow: 0 0 0 2px var(--orange), var(--schatten); }
+  .tag-kopf { display: flex; align-items: baseline; gap: 8px; margin-bottom: 8px; }
+  .tag-name { font-size: 19px; font-weight: 700; }
+  .tag-datum { color: var(--text2); font-size: 15px; }
+  .marke { margin-left: auto; font-size: 12px; font-weight: 700; color: var(--orange); background: var(--orange-hell); padding: 2px 8px; border-radius: 99px; }
+
+  /* Eingefügte Rezepte */
+  .gerichte { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+  .gerichte:empty { display: none; }
+  .gericht {
+    display: flex; align-items: center; gap: 10px;
+    padding: 6px 6px 6px 6px; background: var(--gruen-hell); border-radius: 12px;
+  }
+  .gericht a { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; color: var(--text); font-weight: 600; }
+  .gericht .bild {
+    width: 34px; height: 34px; flex: none; border-radius: 8px;
+    background: #fff; color: var(--gruen); font-weight: 700; font-size: 16px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .gericht .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .gericht .weg {
+    width: 34px; height: 34px; border-radius: 50%; flex: none;
+    color: var(--text2); font-size: 20px; line-height: 1;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .gericht .weg:hover { background: rgba(0,0,0,.06); }
+  .gericht.fehlt { background: var(--feld); }
+  .gericht.fehlt .name { color: var(--text2); font-weight: 400; font-style: italic; }
+
+  /* Freifeld */
+  textarea {
+    display: block; width: 100%; min-height: 46px; resize: none; overflow: hidden;
+    padding: 11px 12px; border: 1px solid var(--linie); border-radius: 12px;
+    background: var(--feld); font-size: 16px; line-height: 1.4;
+  }
+  textarea:focus { outline: none; border-color: var(--gruen); background: #fff; }
+  textarea::placeholder { color: #a9a49a; }
+
+  .rezept-knopf {
+    margin-top: 8px; display: inline-flex; align-items: center; gap: 6px;
+    color: var(--gruen); font-weight: 600; font-size: 15px; padding: 6px 2px;
+  }
+  .rezept-knopf svg { width: 18px; height: 18px; }
+
+  /* ---------- Rezept-Auswahl (Blatt von unten) ---------- */
+  .schleier { position: fixed; inset: 0; z-index: 20; background: rgba(0,0,0,.35); display: flex; align-items: flex-end; justify-content: center; }
+  .blatt {
+    width: 100%; max-width: 640px; max-height: 80vh;
+    display: flex; flex-direction: column;
+    background: var(--hg); border-radius: 20px 20px 0 0;
+    padding: 10px 16px max(16px, env(safe-area-inset-bottom));
+    animation: hoch .2s ease-out;
+  }
+  @keyframes hoch { from { transform: translateY(40px); opacity: 0; } }
+  .griff { width: 40px; height: 5px; border-radius: 3px; background: #d3cdc3; margin: 0 auto 10px; }
+  .blatt-kopf { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .blatt-kopf h2 { font-size: 19px; margin: 0; }
+  .blatt-kopf button { color: var(--gruen); font-weight: 600; }
+  .suche {
+    height: 44px; width: 100%; padding: 0 12px; flex: none;
+    border: 1px solid var(--linie); border-radius: 12px; background: var(--karte); font-size: 16px;
+  }
+  .suche:focus { outline: none; border-color: var(--gruen); }
+  .auswahl { overflow-y: auto; margin-top: 10px; -webkit-overflow-scrolling: touch; }
+  .auswahl button {
+    width: 100%; display: flex; align-items: center; gap: 12px; text-align: left;
+    padding: 10px 12px; margin-bottom: 8px; background: var(--karte); border-radius: 14px; box-shadow: var(--schatten);
+  }
+  .auswahl .bild {
+    width: 44px; height: 44px; flex: none; border-radius: 10px;
+    background: var(--beige); color: #b3a690; font-weight: 700; font-size: 19px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .auswahl .titel { font-weight: 600; }
+  .auswahl .klein { font-size: 14px; color: var(--text2); }
+  .leer { color: var(--text2); text-align: center; padding: 24px 8px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="leiste">
+    <a href="../index.html" class="zurueck">‹ Start</a>
+    <button type="button" class="heute-knopf" id="heute-knopf">Heute</button>
+  </header>
+
+  <h1>Essensplan</h1>
+
+  <div class="wochenwahl">
+    <button type="button" id="zurueck-woche" aria-label="Vorige Woche">‹</button>
+    <div class="mitte">
+      <div class="kw" id="kw"></div>
+      <div class="spanne" id="spanne"></div>
+    </div>
+    <button type="button" id="vor-woche" aria-label="Nächste Woche">›</button>
+  </div>
+
+  <div id="tage"></div>
+</div>
+
+<!-- Rezept-Auswahl -->
+<div class="schleier" id="schleier" hidden>
+  <div class="blatt" role="dialog" aria-modal="true" aria-labelledby="blatt-titel">
+    <div class="griff"></div>
+    <div class="blatt-kopf">
+      <h2 id="blatt-titel">Rezept einfügen</h2>
+      <button type="button" id="schliessen">Fertig</button>
+    </div>
+    <input class="suche" id="suche" type="search" placeholder="Rezept suchen" autocomplete="off">
+    <div class="auswahl" id="auswahl"></div>
+  </div>
+</div>
+
+<script>
+  // ---------- Daten ----------
+  // Der Plan liegt im selben Gerätespeicher wie Einkaufsliste und Rezepte.
+  // Aufbau: { "2026-11-16": { text: "Reste", rezepte: [id, id] }, ... }
+  const PLAN = "essensplan";
+  const REZEPTE = "rezeptbuch";
+  const TAGE = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"];
+  const $ = id => document.getElementById(id);
+
+  let plan = {};
+  let rezepte = [];
+  function laden() {
+    try { plan = JSON.parse(localStorage.getItem(PLAN)) || {}; } catch (e) { plan = {}; }
+    try { const r = JSON.parse(localStorage.getItem(REZEPTE)); rezepte = (r && r.rezepte) || []; } catch (e) { rezepte = []; }
+  }
+  function speichern() {
+    // leere Tage nicht aufheben
+    for (const k of Object.keys(plan)) {
+      const e = plan[k];
+      if (!(e.text || "").trim() && !(e.rezepte || []).length) delete plan[k];
+    }
+    try { localStorage.setItem(PLAN, JSON.stringify(plan)); } catch (e) {}
+  }
+  const eintrag = k => (plan[k] = plan[k] || { text: "", rezepte: [] });
+  const rezeptVon = id => rezepte.find(r => String(r.id) === String(id));
+
+  // ---------- Datum ----------
+  const schluessel = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  function montagVon(d) { const m = new Date(d); m.setHours(12, 0, 0, 0); m.setDate(m.getDate() - ((m.getDay() + 6) % 7)); return m; }
+  function kalenderwoche(d) {
+    const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    t.setUTCDate(t.getUTCDate() + 4 - (t.getUTCDay() || 7));
+    const jahresanfang = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
+    return Math.ceil(((t - jahresanfang) / 86400000 + 1) / 7);
+  }
+  const heute = () => new Date();
+  let montag = montagVon(heute());
+
+  // ---------- Woche zeichnen ----------
+  function zeichnen() {
+    const sonntag = new Date(montag); sonntag.setDate(montag.getDate() + 6);
+    const kurz = { day: "numeric", month: "long" };
+    $("kw").textContent = `KW ${kalenderwoche(montag)}`;
+    $("spanne").textContent = montag.getMonth() === sonntag.getMonth()
+      ? `${montag.getDate()}.–${sonntag.toLocaleDateString("de-DE", kurz)}`
+      : `${montag.toLocaleDateString("de-DE", kurz)} – ${sonntag.toLocaleDateString("de-DE", kurz)}`;
+    $("heute-knopf").disabled = schluessel(montag) === schluessel(montagVon(heute()));
+
+    const tage = $("tage");
+    tage.innerHTML = "";
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(montag); d.setDate(montag.getDate() + i);
+      tage.appendChild(tagKarte(d, i));
+    }
+    tage.querySelectorAll("textarea").forEach(passendeHoehe);
+  }
+
+  function tagKarte(d, i) {
+    const k = schluessel(d);
+    const e = plan[k] || { text: "", rezepte: [] };
+    const istHeute = k === schluessel(heute());
+
+    const karte = document.createElement("section");
+    karte.className = "tag" + (istHeute ? " heute" : "");
+    karte.id = "tag-" + k;
+    karte.innerHTML = `
+      <div class="tag-kopf">
+        <span class="tag-name">${TAGE[i]}</span>
+        <span class="tag-datum">${d.getDate()}.${d.getMonth() + 1}.</span>
+        ${istHeute ? '<span class="marke">Heute</span>' : ""}
+      </div>
+      <div class="gerichte"></div>
+      <textarea rows="1" placeholder="Was gibt's? (frei eintragen)"></textarea>
+      <button type="button" class="rezept-knopf">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+        Rezept einfügen
+      </button>`;
+
+    // eingefügte Rezepte
+    const gerichte = karte.querySelector(".gerichte");
+    (e.rezepte || []).forEach((id, nr) => {
+      const r = rezeptVon(id);
+      const zeile = document.createElement("div");
+      zeile.className = "gericht" + (r ? "" : " fehlt");
+      const link = document.createElement(r ? "a" : "span");
+      if (r) link.href = "../rezepte/index.html#r/" + r.id;
+      link.innerHTML = `<span class="bild"></span><span class="name"></span>`;
+      link.querySelector(".bild").textContent = r ? r.titel.trim().charAt(0).toUpperCase() : "?";
+      link.querySelector(".name").textContent = r ? r.titel : "Rezept gelöscht";
+      link.style.cssText = r ? "" : "flex:1;display:flex;align-items:center;gap:10px";
+      const weg = document.createElement("button");
+      weg.className = "weg"; weg.type = "button";
+      weg.textContent = "×"; weg.title = "Aus dem Plan nehmen"; weg.setAttribute("aria-label", "Aus dem Plan nehmen");
+      weg.addEventListener("click", () => {
+        eintrag(k).rezepte.splice(nr, 1);
+        speichern(); zeichnen();
+      });
+      zeile.append(link, weg);
+      gerichte.appendChild(zeile);
+    });
+
+    // Freifeld – speichert bei jeder Eingabe
+    const feld = karte.querySelector("textarea");
+    feld.value = e.text || "";
+    feld.setAttribute("aria-label", `Eintrag für ${TAGE[i]}`);
+    feld.addEventListener("input", () => {
+      eintrag(k).text = feld.value;
+      passendeHoehe(feld);
+      speichern();
+    });
+
+    karte.querySelector(".rezept-knopf").addEventListener("click", () => auswahlOeffnen(k, TAGE[i]));
+    return karte;
+  }
+
+  // Freifeld wächst mit dem Text
+  function passendeHoehe(feld) { feld.style.height = "auto"; feld.style.height = feld.scrollHeight + 2 + "px"; }
+
+  // ---------- Rezept auswählen ----------
+  let fuerTag = null;
+  function auswahlOeffnen(k, tagName) {
+    laden();                       // falls inzwischen neue Rezepte dazugekommen sind
+    fuerTag = k;
+    $("blatt-titel").textContent = `Rezept für ${tagName}`;
+    $("suche").value = "";
+    auswahlZeichnen();
+    $("schleier").hidden = false;
+    document.body.style.overflow = "hidden";
+  }
+  function auswahlSchliessen() {
+    $("schleier").hidden = true;
+    document.body.style.overflow = "";
+    fuerTag = null;
+  }
+  const norm = s => (s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+
+  function auswahlZeichnen() {
+    const liste = $("auswahl");
+    liste.innerHTML = "";
+    if (!rezepte.length) {
+      liste.innerHTML = `<p class="leer">Noch keine Rezepte gespeichert.<br><a href="../rezepte/index.html">Zum Rezeptbuch ›</a></p>`;
+      return;
+    }
+    const q = norm($("suche").value.trim());
+    const treffer = rezepte
+      .filter(r => !q || norm(r.titel).includes(q) || (r.zutaten || []).some(z => norm(z.name).includes(q)))
+      .sort((a, b) => a.titel.localeCompare(b.titel, "de"));
+    if (!treffer.length) { liste.innerHTML = `<p class="leer">Kein Rezept gefunden.</p>`; return; }
+
+    treffer.forEach(r => {
+      const knopf = document.createElement("button");
+      knopf.type = "button";
+      knopf.innerHTML = `<span class="bild"></span><span><div class="titel"></div><div class="klein"></div></span>`;
+      knopf.querySelector(".bild").textContent = r.titel.trim().charAt(0).toUpperCase();
+      knopf.querySelector(".titel").textContent = r.titel;
+      knopf.querySelector(".klein").textContent = `${r.portionen || "?"} Portionen · ${(r.zutaten || []).length} ${(r.zutaten || []).length === 1 ? "Zutat" : "Zutaten"}`;
+      knopf.addEventListener("click", () => {
+        const k = fuerTag;
+        eintrag(k).rezepte.push(r.id);
+        speichern();
+        auswahlSchliessen();
+        zeichnen();
+        const karte = $("tag-" + k);
+        if (karte) karte.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      });
+      liste.appendChild(knopf);
+    });
+  }
+  $("suche").addEventListener("input", auswahlZeichnen);
+  $("schliessen").addEventListener("click", auswahlSchliessen);
+  $("schleier").addEventListener("click", e => { if (e.target === $("schleier")) auswahlSchliessen(); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("schleier").hidden) auswahlSchliessen(); });
+
+  // ---------- Wochen blättern ----------
+  function woche(schritt) { montag.setDate(montag.getDate() + 7 * schritt); zeichnen(); window.scrollTo(0, 0); }
+  $("zurueck-woche").addEventListener("click", () => woche(-1));
+  $("vor-woche").addEventListener("click", () => woche(1));
+  $("heute-knopf").addEventListener("click", () => {
+    montag = montagVon(heute()); zeichnen();
+    const karte = $("tag-" + schluessel(heute()));
+    if (karte) karte.scrollIntoView({ block: "center", behavior: "smooth" });
+  });
+
+  // ---------- Start ----------
+  laden();
+  zeichnen();
+  // beim Öffnen gleich zum heutigen Tag
+  requestAnimationFrame(() => {
+    const karte = $("tag-" + schluessel(heute()));
+    if (karte && karte.getBoundingClientRect().top > window.innerHeight * .6) karte.scrollIntoView({ block: "center" });
+  });
+  // Zurück aus dem Rezeptbuch: Rezepte könnten sich geändert haben
+  window.addEventListener("pageshow", e => { if (e.persisted) { laden(); zeichnen(); } });
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden && !document.activeElement.matches("textarea")) { laden(); zeichnen(); }
+  });
+
+  if ("serviceWorker" in navigator && location.protocol === "https:") {
+    navigator.serviceWorker.register("../sw.js").catch(() => {});
+  }
+</script>
+</body>
+</html>
